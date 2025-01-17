@@ -1,14 +1,19 @@
 body {
-    margin: 0;
-    background: linear-gradient(180deg, rgb(117, 81, 194), rgb(255, 255, 255));
-    display: flex;
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-    height: 100vh;
-    width: 100vw;
-    justify-content: center;
-    align-items: center;
-  }
+  margin: 0;
+  background: linear-gradient(180deg, rgb(255, 232, 181), rgb(250, 175, 18));
+  display: flex;
+  justify-content: center; /* Centers content horizontally */
+  align-items: center;    /* Centers content vertically */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  max-width: 100%;
+  overflow-x: hidden;
+  height: 100vh; /* Ensures the body takes up the full viewport height */
+  background-attachment: fixed;
+}
+
   
+
+
   main {
     display: flex;
     flex-direction: column;
@@ -62,4 +67,167 @@ body {
   a {
     font-weight: 800;
     text-decoration: none;
+  }
+
+  .calendar {
+    background-color: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 1600px; /* Adjust as needed */
+  }
+  
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .calendar-header button {
+    background-color: #6649AE;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .calendar-table th,
+  .calendar-table td {
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .calendar-table th {
+    background-color: #f7fafc;
+    font-weight: 600;
+  }
+  
+  .calendar-table td {
+    cursor: pointer;
+  }
+  
+  .calendar-table td:hover {
+    background-color: #edf2f7;
+  }
+  
+  .calendar-table td.selected {
+    background-color: #6649AE;
+    color: white;
+  }
+  
+  .calendar-table td.other-month {
+    color: #a0aec0;
+  }
+  
+  .calendar-table td.bookmarked {
+    background-color: #CBBEFF;
+    font-weight: bold;
+  }
+  
+  .date-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+  
+  .rating-stars {
+    display: flex;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  
+  .rating-buttons {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  
+  .rating-buttons button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .rating-buttons button.easy {
+    background-color: #48BB78;
+    color: white;
+  }
+  
+  .rating-buttons button.medium {
+    background-color: #ECC94B;
+    color: white;
+  }
+  
+  .rating-buttons button.hard {
+    background-color: #F56565;
+    color: white;
+  }
+  
+  /* Styles for ReactQuill editor */
+  .ql-editor {
+    min-height: 200px;
+  }
+  
+  .ql-container {
+    font-size: 16px;
+  }
+  
+  /* Styles for the problem display */
+  .problem-content {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  .problem-content img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  .problem-content .ql-syntax {
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
+  .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 20vh;
+    padding: 2rem;
+    background-color: #f3f4f6;
+  }
+  
+  .custom-card {
+    width: 100%;
+    max-width: 700px;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-header {
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .card-title {
+    text-align: center;
+  }
+  
+  .card-content {
+    text-align: center;
+    padding: 1rem;
   }
