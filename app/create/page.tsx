@@ -31,7 +31,9 @@ export default function CreateProblem() {
   const [hint, setHint] = useState('');
   const [tags, setTags] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [availableTopics, setAvailableTopics] = useState<Array<{id: string, name: string}>>([]);
+  const [availableTopics, setAvailableTopics] = useState<Array<{
+    courseID: string;id: string, name: string
+}>>([]);
   const [availableCourses, setAvailableCourses] = useState<Array<{id: string, name: string}>>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,10 +45,17 @@ export default function CreateProblem() {
     const fetchCoursesAndTopics = async () => {
       try {
         const coursesResponse = await client.models.Course.list();
-        setAvailableCourses(coursesResponse.data);
+        setAvailableCourses(coursesResponse.data.map(course => ({
+          id: course.id,
+          name: course.name || 'Unnamed Course'
+        })));
         
         const topicsResponse = await client.models.Topic.list();
-        setAvailableTopics(topicsResponse.data);
+        setAvailableTopics(topicsResponse.data.map(topic => ({
+          courseID: topic.courseID || '',
+          id: topic.id,
+          name: topic.name || 'Unnamed Topic'
+        })));
       } catch (error) {
         toast.error("Failed to load courses and topics");
       }
@@ -65,7 +74,7 @@ export default function CreateProblem() {
       if (response.data.length > 0) {
         const problem = response.data[0];
         setExistingProblem(problem);
-        setContent(problem.content);
+        setContent(problem.content || '');
         setHint(problem.hint || '');
         setTags(problem.tags?.join(', ') || '');
         
@@ -152,7 +161,7 @@ export default function CreateProblem() {
         if (selectedTopics.length > 0) {
           for (const topicId of selectedTopics) {
             await client.models.ProblemTopic.create({
-              problemID: newProblem.id,
+              problemID: newProblem && newProblem.data ? newProblem.data.id : '',
               topicID: topicId,
             });
           }
