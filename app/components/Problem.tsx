@@ -8,7 +8,6 @@ import dynamic from 'next/dynamic';
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 function renderLatex(text: string) {
   const parser = new DOMParser();
@@ -49,7 +48,7 @@ function renderLatex(text: string) {
 }
 
 
-const CustomQuill = ({ value, readOnly = false }) => {
+const CustomQuill: React.FC<{ value: string; readOnly?: boolean }> = ({ value, readOnly = false }) => {
   return (
     <div className="prose dark:prose-invert max-w-none">
       {value.split('\n').map((line, i) => (

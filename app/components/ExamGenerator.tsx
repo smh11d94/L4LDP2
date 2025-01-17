@@ -6,19 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import _ from 'lodash';
 import dynamic from 'next/dynamic';
-const ExamButton = () => (
-  <Dialog>
-    <DialogTrigger asChild>
-      <Button variant="outline">Generate Custom Exam</Button>
-    </DialogTrigger>
-    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>Generate Custom Exam</DialogTitle>
-      </DialogHeader>
-      <ExamGenerator />
-    </DialogContent>
-  </Dialog>
-);
+
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
