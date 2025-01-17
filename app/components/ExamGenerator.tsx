@@ -54,10 +54,12 @@ export default function ExamGenerator() {
         const sampledIds = _.sampleSize(uniqueProblemsForDifficulty, Math.ceil(10 / selectedDifficulties.length));
         
         sampledIds.forEach(id => {
-          difficultyMap[id] = difficulty;
+          if (id !== null) {
+            difficultyMap[id] = difficulty;
+          }
         });
         
-        allSelectedIds = [...allSelectedIds, ...sampledIds];
+        allSelectedIds = [...allSelectedIds, ...sampledIds.filter(id => id !== null)];
       }
   
       const finalSelectedIds = _.sampleSize(allSelectedIds, 10);
