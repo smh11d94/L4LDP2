@@ -45,8 +45,8 @@ export default function ExamGenerator() {
       const { data: ratings } = await client.models.Rating.list();
       const problemsByDifficulty = _.groupBy(ratings, 'rating');
       
-      let allSelectedIds = [];
-      let difficultyMap = {};
+      let allSelectedIds: string[] = [];
+      let difficultyMap : Record<string, string> ={};
   
       for (const difficulty of selectedDifficulties) {
         const difficultyProblems = problemsByDifficulty[difficulty] || [];
