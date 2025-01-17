@@ -40,7 +40,7 @@ const CourseManagement = () => {
     fetchCourses();
     fetchTopics();
   }, []);
-
+ 
   const fetchCourses = async () => {
     try {
       const response = await client.models.Course.list();

@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { BookmarkIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
-import dynamic from 'next/dynamic';
 import 'katex/dist/katex.min.css';
 import katex from 'katex';
-
+ 
 
 function renderLatex(text: string) {
   const parser = new DOMParser();
