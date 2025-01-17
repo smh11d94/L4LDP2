@@ -1,0 +1,17 @@
+body {
+  background-color: rgba(255, 232, 181, 0.3);
+  display: block;
+  justify-content: unset !important;
+  align-items: unset !important;
+  margin: 0 !important;
+  height: auto !important;
+ }
+ 
+  .ql-editor {
+  min-height: unset !important;
+  padding: 12px !important;
+}
+
+.ql-container {
+  height: auto !important;
+}
