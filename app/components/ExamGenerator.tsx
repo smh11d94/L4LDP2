@@ -32,7 +32,12 @@ export default function ExamGenerator() {
     medium: false,
     hard: false
   });
-  const [generatedProblems, setGeneratedProblems] = useState([]);
+  interface Problem {
+    id: string;
+    content: string;
+  }
+  
+  const [generatedProblems, setGeneratedProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const generateExam = async () => {
