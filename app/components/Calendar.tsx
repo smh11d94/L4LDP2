@@ -87,7 +87,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           <Button
             onClick={() => onSelectDate(currentMonth.clone().subtract(1, 'month'), 'month')}
             variant="ghost"
-            size="icon"
+            size="lg"
             className="hover:bg-primary/10"
           >
             <ChevronLeftIcon className="h-5 w-5" />
@@ -98,7 +98,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           <Button
             onClick={() => onSelectDate(currentMonth.clone().add(1, 'month'), 'month')}
             variant="ghost"
-            size="icon"
+            size="lg"
             className="hover:bg-primary/10"
           >
             <ChevronRightIcon className="h-5 w-5" />
