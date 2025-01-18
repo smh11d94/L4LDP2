@@ -17,8 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from 'sonner';
 
-import ExamGenerator from "@/app/components/ExamGenerator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 Amplify.configure(outputs);
 
@@ -31,7 +29,9 @@ export default function CreateProblem() {
   const [hint, setHint] = useState('');
   const [tags, setTags] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [availableTopics, setAvailableTopics] = useState<Array<{id: string, name: string}>>([]);
+  const [availableTopics, setAvailableTopics] = useState<Array<{
+    courseID: string;id: string, name: string
+}>>([]);
   const [availableCourses, setAvailableCourses] = useState<Array<{id: string, name: string}>>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,21 +39,28 @@ export default function CreateProblem() {
   
   const { user } = useAuthenticator();
 
-  useEffect(() => {
-    const fetchCoursesAndTopics = async () => {
-      try {
-        const coursesResponse = await client.models.Course.list();
-        setAvailableCourses(coursesResponse.data);
-        
-        const topicsResponse = await client.models.Topic.list();
-        setAvailableTopics(topicsResponse.data);
-      } catch (error) {
-        toast.error("Failed to load courses and topics");
-      }
-    };
-    
-    fetchCoursesAndTopics();
-  }, []);
+useEffect(() => {
+   const fetchCoursesAndTopics = async () => {
+     try {
+       const coursesResponse = await client.models.Course.list();
+       setAvailableCourses(coursesResponse.data.map(course => ({
+         id: course.id,
+         name: course.name || ''
+       })));
+       
+       const topicsResponse = await client.models.Topic.list();
+       setAvailableTopics(topicsResponse.data.map(topic => ({
+         id: topic.id,
+         name: topic.name || '',
+         courseID: topic.courseID || ''
+       })));
+     } catch (error) {
+       toast.error("Failed to load courses and topics");
+     }
+   };
+   
+   fetchCoursesAndTopics();
+ }, []);
 
   const handleDateChange = async (date: string) => {
     setPublishDate(date);
@@ -65,7 +72,7 @@ export default function CreateProblem() {
       if (response.data.length > 0) {
         const problem = response.data[0];
         setExistingProblem(problem);
-        setContent(problem.content);
+        setContent(problem.content || '');
         setHint(problem.hint || '');
         setTags(problem.tags?.join(', ') || '');
         
@@ -149,10 +156,10 @@ export default function CreateProblem() {
           updatedAt: new Date().toISOString(),
         });
 
-        if (selectedTopics.length > 0) {
+        if (selectedTopics.length > 0 && newProblem?.data?.id) {
           for (const topicId of selectedTopics) {
             await client.models.ProblemTopic.create({
-              problemID: newProblem.id,
+              problemID: newProblem.data.id,
               topicID: topicId,
             });
           }
