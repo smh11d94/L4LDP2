@@ -40,15 +40,11 @@ const CourseManagement = () => {
     fetchCourses();
     fetchTopics();
   }, []);
- 
+
   const fetchCourses = async () => {
     try {
       const response = await client.models.Course.list();
-      setCourses(response.data.map(course => ({
-        id: course.id,
-        name: course.name || '',
-        description: course.description || ''
-      })));
+      setCourses(response.data);
     } catch (error) {
       toast.error("Failed to load courses");
     }
@@ -61,13 +57,7 @@ const CourseManagement = () => {
       
       const topicsWithCounts = response.data.map(topic => {
         const problemCount = problemTopics.data.filter(pt => pt.topicID === topic.id).length;
-        return { 
-          id: topic.id,
-          name: topic.name || '', 
-          description: topic.description || '',
-          courseID: topic.courseID || '',
-          problemCount 
-        };
+        return { ...topic, problemCount };
       });
       
       setTopics(topicsWithCounts);
