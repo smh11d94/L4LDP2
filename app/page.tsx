@@ -116,7 +116,9 @@ function App() {
       });
       setBookmarks(data);
       const bookmarkMap = data.reduce((acc, bookmark) => {
-        acc[bookmark.date] = bookmark;
+        if (bookmark.date) {
+          acc[bookmark.date] = bookmark;
+        }
         return acc;
       }, {} as Record<string, Bookmark>);
       setBookmarksByDate(bookmarkMap);
@@ -134,9 +136,18 @@ function App() {
       
       const ratingMap: Record<string, 'easy' | 'medium' | 'hard'> = {};
       for (const rating of data) {
-        const { data: problem } = await client.models.Problem.get({ id: rating.problemID });
+        if (rating.problemID) {
+          const { data: problem } = await client.models.Problem.get({ id: rating.problemID });
+          if (problem?.publishDate) {
+            if (rating.rating !== null) {
+              ratingMap[problem.publishDate] = rating.rating;
+            }
+          }
+        }
         if (problem?.publishDate) {
-          ratingMap[problem.publishDate] = rating.rating;
+          if (rating.rating !== null) {
+            ratingMap[problem.publishDate] = rating.rating;
+          }
         }
       }
       setRatingsByDate(ratingMap);
@@ -163,7 +174,7 @@ function App() {
     }
     try {
       const existingNote = notes.find(n => n.problemID === problem.id && n.owner === user.username);
-      setCurrentNote(existingNote ? existingNote.content : "");
+      setCurrentNote(existingNote && existingNote.content ? existingNote.content : "");
     } catch (error) {
       console.error('Error fetching note:', error);
       setCurrentNote("");
@@ -180,7 +191,7 @@ function App() {
         r.problemID === problem.id && 
         r.owner === user.username
       );
-      setCurrentRating(existingRating ? existingRating.rating : null);
+      setCurrentRating(existingRating && existingRating.rating ? existingRating.rating : null);
     } catch (error) {
       console.error('Error fetching rating:', error);
       setCurrentRating(null);
@@ -246,18 +257,18 @@ function App() {
           owner: user.username
         });
         setRatings(prevRatings => 
-          prevRatings.map(r => r.id === existingRating.id ? updatedRating : r)
+          prevRatings.map(r => r.id === existingRating.id ? { ...r, ...updatedRating } : r)
         );
         setCurrentRating(rating);
         await listRatings();
       } else {
-        const newRating = await client.models.Rating.create({
+        const { data: newRating } = await client.models.Rating.create({
           rating,
           problemID: problem.id,
           date: now,
           owner: user.username
         });
-        setRatings(prevRatings => [...prevRatings, newRating]);
+        setRatings(prevRatings => [...prevRatings, newRating as Rating]);
         setCurrentRating(rating);
         await listRatings();
       }
@@ -285,17 +296,17 @@ function App() {
           owner: user.username
         });
         setNotes(prevNotes => 
-          prevNotes.map(n => n.id === existingNote.id ? updatedNote : n)
+          prevNotes.map(n => n.id === existingNote.id ? { ...n, ...updatedNote } : n)
         );
       } else {
-        const newNote = await client.models.Note.create({
+        const { data: newNote } = await client.models.Note.create({
           content: note,
           problemID: problem.id,
           createdAt: now,
           updatedAt: now,
           owner: user.username
         });
-        setNotes(prevNotes => [...prevNotes, newNote]);
+        setNotes(prevNotes => [...prevNotes, newNote as Note]);
       }
       setCurrentNote(note);
     } catch (error) {
@@ -308,7 +319,7 @@ function App() {
 
 
   const bookmarkedDates = useMemo(() => {
-    return new Set(bookmarks.map(b => b.date));
+    return new Set(bookmarks.map(b => b.date).filter((date): date is string => date !== undefined));
   }, [bookmarks]);
 
 
@@ -354,7 +365,7 @@ function App() {
         
         <div className="lg:col-span-5">
           <Problem
-            problem={problem}
+            problem={problem ? { ...problem, content: problem.content || "", hint: problem.hint || undefined } : null}
             selectedDate={selectedDate}
             isBookmarked={bookmarkedDates.has(selectedDate.format('YYYY-MM-DD'))}
             currentRating={currentRating}

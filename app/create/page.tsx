@@ -39,6 +39,7 @@ export default function CreateProblem() {
   
   const { user } = useAuthenticator();
 
+<<<<<<< HEAD
 useEffect(() => {
    const fetchCoursesAndTopics = async () => {
      try {
@@ -61,6 +62,30 @@ useEffect(() => {
    
    fetchCoursesAndTopics();
  }, []);
+=======
+  useEffect(() => {
+    const fetchCoursesAndTopics = async () => {
+      try {
+        const coursesResponse = await client.models.Course.list();
+        setAvailableCourses(coursesResponse.data.map(course => ({
+          id: course.id,
+          name: course.name || 'Unnamed Course'
+        })));
+        
+        const topicsResponse = await client.models.Topic.list();
+        setAvailableTopics(topicsResponse.data.map(topic => ({
+          courseID: topic.courseID || '',
+          id: topic.id,
+          name: topic.name || 'Unnamed Topic'
+        })));
+      } catch (error) {
+        toast.error("Failed to load courses and topics");
+      }
+    };
+    
+    fetchCoursesAndTopics();
+  }, []);
+>>>>>>> 53e853c27e443f3d9bedd9dda2e81902bd6eced0
 
   const handleDateChange = async (date: string) => {
     setPublishDate(date);
@@ -159,7 +184,11 @@ useEffect(() => {
         if (selectedTopics.length > 0 && newProblem?.data?.id) {
           for (const topicId of selectedTopics) {
             await client.models.ProblemTopic.create({
+<<<<<<< HEAD
               problemID: newProblem.data.id,
+=======
+              problemID: newProblem && newProblem.data ? newProblem.data.id : '',
+>>>>>>> 53e853c27e443f3d9bedd9dda2e81902bd6eced0
               topicID: topicId,
             });
           }

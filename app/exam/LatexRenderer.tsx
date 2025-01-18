@@ -39,7 +39,12 @@ export function renderLatex(text: string) {
   return <div>{rawText}</div>;
 }
 
-export const CustomQuill = ({ value, readOnly = false }) => {
+interface CustomQuillProps {
+  value: string;
+  readOnly?: boolean;
+}
+
+export const CustomQuill = ({ value, readOnly = false }: CustomQuillProps) => {
   return (
     <div className="prose dark:prose-invert max-w-none">
       {value.split('\n').map((line, i) => (

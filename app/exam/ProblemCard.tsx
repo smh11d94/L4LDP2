@@ -9,7 +9,7 @@ interface ProblemCardProps {
   };
   index: number;
   rating?: string;
-  onDifficultyChange: (problemId: string, difficulty: string) => void;
+  onDifficultyChange: (problemId: string, difficulty: "easy" | "medium" | "hard") => void;
 }
 
 const ProblemCard: React.FC<ProblemCardProps> = ({ problem, index, rating, onDifficultyChange }) => {
@@ -28,7 +28,7 @@ const ProblemCard: React.FC<ProblemCardProps> = ({ problem, index, rating, onDif
         <h3 className="font-bold text-xl">Problem {index + 1}</h3>
         <div className="flex items-center gap-4">
          
-          <Select value={rating} onValueChange={(value) => onDifficultyChange(problem.id, value)}>
+          <Select value={rating} onValueChange={(value) => onDifficultyChange(problem.id, value as "easy" | "medium" | "hard")}>
   <SelectTrigger className={`w-24 px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(rating)}`}>
     <SelectValue placeholder="Select difficulty" />
             </SelectTrigger>

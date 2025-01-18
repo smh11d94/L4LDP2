@@ -1,11 +1,10 @@
-import { useState } from 'react';
+
 import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { BookmarkIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
+ 
 type CalendarProps = {
   currentMonth: moment.Moment;
   selectedDate: moment.Moment;
@@ -87,7 +86,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           <Button
             onClick={() => onSelectDate(currentMonth.clone().subtract(1, 'month'), 'month')}
             variant="ghost"
-            size="icon"
+            size="lg"
             className="hover:bg-primary/10"
           >
             <ChevronLeftIcon className="h-5 w-5" />
@@ -98,7 +97,7 @@ export const Calendar: React.FC<CalendarProps> = ({
           <Button
             onClick={() => onSelectDate(currentMonth.clone().add(1, 'month'), 'month')}
             variant="ghost"
-            size="icon"
+            size="lg"
             className="hover:bg-primary/10"
           >
             <ChevronRightIcon className="h-5 w-5" />

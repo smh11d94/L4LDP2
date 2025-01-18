@@ -18,8 +18,8 @@ Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
 function ExamView() {
-  const [problems, setProblems] = useState([]);
-  const [ratings, setRatings] = useState({});
+  const [problems, setProblems] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<{ [key: string]: 'easy' | 'medium' | 'hard' }>({});
 
   useEffect(() => {
     const problemIds = JSON.parse(localStorage.getItem('examProblems') || '[]');
@@ -28,7 +28,7 @@ function ExamView() {
     const fetchProblems = async () => {
       const user = await getCurrentUser();
       const fetchedProblems = await Promise.all(
-        problemIds.map(async (id) => {
+        problemIds.map(async (id: string) => {
           const { data: problem } = await client.models.Problem.get({ id });
           const { data: ratings } = await client.models.Rating.list({
             filter: {
@@ -38,10 +38,14 @@ function ExamView() {
           });
           
           if (ratings.length > 0) {
-            setRatings(prev => ({
-              ...prev,
-              [id]: ratings[0].rating
-            }));
+            if (ratings[0].rating) {
+              if (ratings[0].rating !== null) {
+                setRatings(prev => ({
+                  ...prev,
+                  [id]: ratings[0].rating as 'easy' | 'medium' | 'hard'
+                }));
+              }
+            }
           }
           return problem;
         })
@@ -51,7 +55,7 @@ function ExamView() {
     fetchProblems();
   }, []);
 
-  const handleDifficultyChange = async (problemId: string, difficulty: string) => {
+  const handleDifficultyChange = async (problemId: string, difficulty: 'easy' | 'medium' | 'hard') => {
     try {
       const user = await getCurrentUser();
       const { data: existingRatings } = await client.models.Rating.list({

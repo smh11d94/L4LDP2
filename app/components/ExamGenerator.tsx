@@ -6,19 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import _ from 'lodash';
 import dynamic from 'next/dynamic';
-const ExamButton = () => (
-  <Dialog>
-    <DialogTrigger asChild>
-      <Button variant="outline">Generate Custom Exam</Button>
-    </DialogTrigger>
-    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>Generate Custom Exam</DialogTitle>
-      </DialogHeader>
-      <ExamGenerator />
-    </DialogContent>
-  </Dialog>
-);
+ 
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -32,7 +20,12 @@ export default function ExamGenerator() {
     medium: false,
     hard: false
   });
-  const [generatedProblems, setGeneratedProblems] = useState([]);
+  interface Problem {
+    id: string;
+    content: string;
+  }
+  
+  const [generatedProblems, setGeneratedProblems] = useState<Problem[]>([]);
   const [loading, setLoading] = useState(false);
 
   const generateExam = async () => {
@@ -45,8 +38,8 @@ export default function ExamGenerator() {
       const { data: ratings } = await client.models.Rating.list();
       const problemsByDifficulty = _.groupBy(ratings, 'rating');
       
-      let allSelectedIds = [];
-      let difficultyMap = {};
+      let allSelectedIds: string[] = [];
+      let difficultyMap : Record<string, string> ={};
   
       for (const difficulty of selectedDifficulties) {
         const difficultyProblems = problemsByDifficulty[difficulty] || [];
@@ -54,10 +47,12 @@ export default function ExamGenerator() {
         const sampledIds = _.sampleSize(uniqueProblemsForDifficulty, Math.ceil(10 / selectedDifficulties.length));
         
         sampledIds.forEach(id => {
-          difficultyMap[id] = difficulty;
+          if (id !== null) {
+            difficultyMap[id] = difficulty;
+          }
         });
         
-        allSelectedIds = [...allSelectedIds, ...sampledIds];
+        allSelectedIds = [...allSelectedIds, ...sampledIds.filter(id => id !== null)];
       }
   
       const finalSelectedIds = _.sampleSize(allSelectedIds, 10);
