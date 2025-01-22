@@ -44,7 +44,11 @@ const CourseManagement = () => {
   const fetchCourses = async () => {
     try {
       const response = await client.models.Course.list();
-      setCourses(response.data);
+      setCourses(response.data.map((course: any) => ({
+        id: course.id,
+        name: course.name || '',
+        description: course.description || ''
+      })));
     } catch (error) {
       toast.error("Failed to load courses");
     }
@@ -55,9 +59,15 @@ const CourseManagement = () => {
       const response = await client.models.Topic.list();
       const problemTopics = await client.models.ProblemTopic.list();
       
-      const topicsWithCounts = response.data.map(topic => {
+      const topicsWithCounts = response.data.map((topic: any) => {
         const problemCount = problemTopics.data.filter(pt => pt.topicID === topic.id).length;
-        return { ...topic, problemCount };
+        return { 
+          id: topic.id,
+          name: topic.name || '',
+          description: topic.description || '',
+          courseID: topic.courseID,
+          problemCount 
+        };
       });
       
       setTopics(topicsWithCounts);
@@ -191,10 +201,10 @@ const CourseManagement = () => {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="container max-w-6xl mx-auto p-6">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
         {/* Course Management Section */}
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Courses</CardTitle>
           </CardHeader>
@@ -250,7 +260,7 @@ const CourseManagement = () => {
         </Card>
 
         {/* Topic Management Section */}
-        <Card>
+        <Card className="md:col-span-5">
           <CardHeader>
             <CardTitle>Topics</CardTitle>
           </CardHeader>
@@ -307,7 +317,7 @@ const CourseManagement = () => {
               </DialogContent>
             </Dialog>
 
-            <div className="space-y-2">
+            <div className="space-y-2 grid grid-cols-3 gap-4">
               {topics.map((topic) => {
                 const course = courses.find(c => c.id === topic.courseID);
                 return (

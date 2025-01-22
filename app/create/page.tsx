@@ -16,24 +16,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from 'sonner';
-
-import ExamGenerator from "@/app/components/ExamGenerator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
+import { CustomQuill } from '../exam/LatexRenderer';
+import "./global.css";
 Amplify.configure(outputs);
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 const client = generateClient<Schema>();
 
 export default function CreateProblem() {
+  const [showPreview, setShowPreview] = useState(false);
   const [content, setContent] = useState('');
   const [publishDate, setPublishDate] = useState('');
   const [hint, setHint] = useState('');
   const [tags, setTags] = useState('');
+  const [wSolution, setWSolution] = useState('');
+  const [vSolution, setVSolution] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [availableTopics, setAvailableTopics] = useState<Array<{
-    courseID: string;id: string, name: string
-}>>([]);
+    courseID: string;
+    id: string;
+    name: string;
+  }>>([]);
   const [availableCourses, setAvailableCourses] = useState<Array<{id: string, name: string}>>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,14 +50,14 @@ export default function CreateProblem() {
         const coursesResponse = await client.models.Course.list();
         setAvailableCourses(coursesResponse.data.map(course => ({
           id: course.id,
-          name: course.name || 'Unnamed Course'
+          name: course.name || ''
         })));
         
         const topicsResponse = await client.models.Topic.list();
         setAvailableTopics(topicsResponse.data.map(topic => ({
-          courseID: topic.courseID || '',
           id: topic.id,
-          name: topic.name || 'Unnamed Topic'
+          name: topic.name || '',
+          courseID: topic.courseID || ''
         })));
       } catch (error) {
         toast.error("Failed to load courses and topics");
@@ -77,6 +80,8 @@ export default function CreateProblem() {
         setContent(problem.content || '');
         setHint(problem.hint || '');
         setTags(problem.tags?.join(', ') || '');
+        setWSolution(problem.wSolution || '');
+        setVSolution(problem.vSolution || '');
         
         const problemTopics = await client.models.ProblemTopic.list({
           filter: { problemID: { eq: problem.id } }
@@ -89,6 +94,8 @@ export default function CreateProblem() {
         setContent('');
         setHint('');
         setTags('');
+        setWSolution('');
+        setVSolution('');
         setSelectedTopics([]);
       }
     } catch (error) {
@@ -114,13 +121,19 @@ export default function CreateProblem() {
 
     setIsSubmitting(true);
     try {
+      const problemData = {
+        content,
+        hint: hint || null,
+        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+        wSolution: wSolution || null,
+        vSolution: vSolution || null,
+        updatedAt: new Date().toISOString(),
+      };
+
       if (existingProblem) {
         await client.models.Problem.update({
           id: existingProblem.id,
-          content,
-          hint: hint || null,
-          tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-          updatedAt: new Date().toISOString(),
+          ...problemData,
         });
 
         const currentTopics = await client.models.ProblemTopic.list({
@@ -130,9 +143,7 @@ export default function CreateProblem() {
         // Remove old topics
         for (const topic of currentTopics.data) {
           if (!selectedTopics.includes(topic.topicID)) {
-            await client.models.ProblemTopic.delete({ 
-              id: topic.id 
-            });
+            await client.models.ProblemTopic.delete({ id: topic.id });
           }
         }
         
@@ -150,18 +161,15 @@ export default function CreateProblem() {
         toast.success('Problem updated successfully');
       } else {
         const newProblem = await client.models.Problem.create({
-          content,
+          ...problemData,
           publishDate,
-          hint: hint || null,
-          tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         });
 
-        if (selectedTopics.length > 0) {
+        if (selectedTopics.length > 0 && newProblem?.data?.id) {
           for (const topicId of selectedTopics) {
             await client.models.ProblemTopic.create({
-              problemID: newProblem && newProblem.data ? newProblem.data.id : '',
+              problemID: newProblem.data.id,
               topicID: topicId,
             });
           }
@@ -170,10 +178,13 @@ export default function CreateProblem() {
         toast.success('Problem created successfully');
       }
       
+      // Reset form
       setContent('');
       setPublishDate('');
       setHint('');
       setTags('');
+      setWSolution('');
+      setVSolution('');
       setSelectedTopics([]);
       setSelectedCourse('');
       setExistingProblem(null);
@@ -201,14 +212,14 @@ export default function CreateProblem() {
 
   return (
     <div className="container max-w-7xl mx-auto p-6">
-      <Card className='w-full'>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl">Create New Problem</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
+              <div className="space-y-2 ">
                 <Label htmlFor="publishDate">Publish Date</Label>
                 <Input
                   type="date"
@@ -235,30 +246,11 @@ export default function CreateProblem() {
                   ))}
                 </select>
               </div>
-            </div>
+            
 
-            <div className="space-y-2">
-              <Label htmlFor="content">Problem Content</Label>
-              <ReactQuill 
-                value={content} 
-                onChange={setContent}
-                modules={{
-                  toolbar: [
-                    [{ 'header': [1, 2, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    ['blockquote', 'code-block'],
-                    [{'list': 'ordered'}, {'list': 'bullet'}],
-                    ['link', 'formula'],
-                    ['clean']
-                  ],
-                }}
-                className="bg-white min-h-[200px] mb-12"
-              />
-            </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-5">
               <Label>Topics</Label>
-              <div className="grid grid-cols-3 gap-4 border rounded-md p-4">
+              <div className="grid grid-cols-6 gap-4 border rounded-md p-4">
                 {filteredTopics.map((topic) => (
                   <div key={topic.id} className="flex items-center space-x-2">
                     <input
@@ -281,6 +273,51 @@ export default function CreateProblem() {
                 ))}
               </div>
             </div>
+            </div>
+            <div className="space-y-2">
+  <Label htmlFor="content">Problem Content</Label>
+  <ReactQuill 
+    value={content} 
+    onChange={setContent}
+    modules={{
+      toolbar: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['blockquote', 'code-block'],
+        [{'list': 'ordered'}, {'list': 'bullet'}],
+        ['link', 'formula'],
+        ['clean']
+      ],
+    }}
+    className="bg-white min-h-[200px] mb-12"
+  />
+  
+  {/* Preview Button */}
+  <div className="flex justify-end mt-2">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => setShowPreview(!showPreview)}
+      className="mb-4"
+    >
+      {showPreview ? 'Hide Preview' : 'Show Preview'}
+    </Button>
+  </div>
+
+  {/* Preview Section */}
+  {showPreview && (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="text-lg">Preview</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <CustomQuill value={content} readOnly={true} />
+      </CardContent>
+    </Card>
+  )}
+</div>
+
+            
 
             <div className="space-y-2">
               <Label htmlFor="tags">Tags (comma-separated)</Label>
@@ -303,6 +340,30 @@ export default function CreateProblem() {
                 placeholder="Optional hint for the problem"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+  <div className="space-y-2">
+    <Label htmlFor="wSolution">Written Solution Link</Label>
+    <Input
+      type="url"
+      id="wSolution"
+      value={wSolution}
+      onChange={(e) => setWSolution(e.target.value)}
+      placeholder="https://example.com/written-solution"
+    />
+  </div>
+
+  <div className="space-y-2">
+    <Label htmlFor="vSolution">Video Solution Link</Label>
+    <Input
+      type="url"
+      id="vSolution"
+      value={vSolution}
+      onChange={(e) => setVSolution(e.target.value)}
+      placeholder="https://example.com/video-solution"
+    />
+  </div>
+</div>
 
             <Button 
               type="submit" 
