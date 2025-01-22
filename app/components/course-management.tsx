@@ -201,10 +201,10 @@ const CourseManagement = () => {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="container max-w-6xl mx-auto p-6">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
         {/* Course Management Section */}
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Courses</CardTitle>
           </CardHeader>
@@ -260,7 +260,7 @@ const CourseManagement = () => {
         </Card>
 
         {/* Topic Management Section */}
-        <Card>
+        <Card className="md:col-span-5">
           <CardHeader>
             <CardTitle>Topics</CardTitle>
           </CardHeader>
@@ -317,7 +317,7 @@ const CourseManagement = () => {
               </DialogContent>
             </Dialog>
 
-            <div className="space-y-2">
+            <div className="space-y-2 grid grid-cols-3 gap-4">
               {topics.map((topic) => {
                 const course = courses.find(c => c.id === topic.courseID);
                 return (

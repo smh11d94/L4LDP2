@@ -69,24 +69,25 @@ export default function ExamGenerator() {
   };
 
   return (
-    <Dialog>
+    <Dialog >
       <DialogTrigger asChild>
-        <Button variant="outline">Generate Custom Exam</Button>
+        <Button className="bg-green-400 hover:scale-110" variant="outline">Generate Custom Quiz</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Generate Custom Exam</DialogTitle>
+          <DialogTitle>Generate Custom Quiz</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
-      <Card>
+      <Card className="rounded-3xl">
         <CardHeader>
-          <CardTitle>Generate Custom Exam</CardTitle>
+          <CardTitle>Select Problems to Include</CardTitle>
+          <div> This tool randomly selects problems based on your past ratings for the problems, creating a personalized selection just for you.</div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex space-x-4">
+            <div className="flex space-x-5">
               {Object.entries(difficulties).map(([difficulty, checked]) => (
-                <label key={difficulty} className="flex items-center space-x-2">
+                <label key={difficulty} className="flex items-right space-x-2">
                   <Checkbox 
                     checked={checked}
                     onCheckedChange={(checked) => 

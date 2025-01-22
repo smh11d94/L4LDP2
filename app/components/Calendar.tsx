@@ -1,4 +1,3 @@
-
 import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ type CalendarProps = {
   selectedDate: moment.Moment;
   onSelectDate: (date: moment.Moment, type: 'day' | 'month') => void;
   bookmarkedDates: Set<string>;
+  problemDates: Set<string>;
   ratings: Record<string, 'easy' | 'medium' | 'hard'>;
 };
 
@@ -18,6 +18,7 @@ export const Calendar: React.FC<CalendarProps> = ({
   selectedDate,
   onSelectDate,
   bookmarkedDates,
+  problemDates,
   ratings
 }) => {
   const startDay = currentMonth.clone().startOf('month').startOf('week');
@@ -40,25 +41,28 @@ export const Calendar: React.FC<CalendarProps> = ({
     const dateString = date.format('YYYY-MM-DD');
     const rating = ratings[dateString];
     const isToday = date.isSame(moment(), 'day');
-    const hasProblem = rating !== undefined;
+    const hasProblem = problemDates.has(dateString);
     const isFutureDate = date.isAfter(moment(), 'day');
     
     return cn(
-      "relative cursor-pointer rounded-xl transition-all duration-200",
+      "relative rounded-xl transition-all duration-200",
       "flex flex-col items-center justify-center",
       "w-12 h-12 md:w-16 md:h-16",
       {
-        'text-muted-foreground': !isCurrentMonth || !hasProblem,
-        'bg-primary/5 dark:bg-primary/10': isToday,
+        'text-muted-foreground': !isCurrentMonth,
+        'bg-primary/5 dark:bg-primary/10 border-1': isToday,
         'bg-emerald-100 dark:bg-emerald-900/30': rating === 'easy',
         'bg-amber-100 dark:bg-amber-900/30': rating === 'medium',
         'bg-rose-100 dark:bg-rose-900/30': rating === 'hard',
         'opacity-50': !hasProblem,
-        'pointer-events-none opacity-30': isFutureDate
+        'pointer-events-none opacity-20': isFutureDate,
+        'cursor-pointer': hasProblem && !isFutureDate,
+        'cursor-not-allowed': !hasProblem || isFutureDate,
+        'ring-2 ring-primary ring-offset-2': hasProblem && !rating
       },
-      !isFutureDate && "hover:scale-105 hover:shadow-md",
-      isFutureDate && "cursor-not-allowed opacity-30",
-      isSelected && "ring-2 ring-primary ring-offset-2 dark:ring-offset-background"
+      hasProblem && !isFutureDate && "opacity-100 hover:opacity-90",
+      hasProblem && !isFutureDate && "hover:scale-105 hover:shadow-md",
+      isSelected && "outline outline-2 outline-primary dark:outline-primary"
     );
   };
 
@@ -73,7 +77,7 @@ export const Calendar: React.FC<CalendarProps> = ({
 
     return (
       <div className={cn(
-        "absolute bottom-1 w-1.5 h-1.5 rounded-full",
+        "absolute bottom-1.5 w-3.5 h-1.5 rounded-full",
         colors[rating]
       )} />
     );
@@ -118,16 +122,18 @@ export const Calendar: React.FC<CalendarProps> = ({
             const isSelected = day.isSame(selectedDate, 'day');
             const isCurrentMonth = day.isSame(currentMonth, 'month');
             const isBookmarked = bookmarkedDates.has(dateString);
+            const hasProblem = problemDates.has(dateString);
             
             return (
               <div
                 key={dateString}
-                onClick={() => onSelectDate(day, 'day')}
+                onClick={() => hasProblem && onSelectDate(day, 'day')}
                 className={getDayStyle(day, isSelected, isCurrentMonth)}
               >
                 <span className={cn(
                   "text-sm font-medium z-10",
-                  isBookmarked && "font-bold"
+                  isBookmarked && "font-bold",
+                  hasProblem && "text-primary"
                 )}>
                   {day.format('D')}
                 </span>
@@ -137,6 +143,9 @@ export const Calendar: React.FC<CalendarProps> = ({
                     className="absolute top-1 right-1 w-3 h-3 text-primary" 
                     fill="currentColor"
                   />
+                )}
+                {hasProblem && !ratings[dateString] && (
+                  <div className="absolute bottom-1.5 w-3.5 h-1.5 rounded-full bg-primary/50" />
                 )}
               </div>
             );

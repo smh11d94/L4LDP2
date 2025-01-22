@@ -18,8 +18,12 @@ import { Problem } from './components/Problem';
 import { getCurrentUser } from 'aws-amplify/auth';
 import ExamGenerator from "@/app/components/ExamGenerator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
+import { Card } from "@/components/ui/card";
 Amplify.configure(outputs);
+
+
+
+
 
 const client = generateClient<Schema>();
 
@@ -30,21 +34,14 @@ type Note = Schema["Note"]["type"];
 
 const ExamButton = () => (
   <Dialog>
-    <DialogTrigger asChild>
-      <Button variant="outline">Generate Custom Exam</Button>
-    </DialogTrigger>
-    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>Generate Custom Exam</DialogTitle>
-      </DialogHeader>
-      <ExamGenerator />
-    </DialogContent>
+    <ExamGenerator />
   </Dialog>
 );
 
 function App() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [problemDates, setProblemDates] = useState<Set<string>>(new Set());
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [ratingsByDate, setRatingsByDate] = useState<Record<string, 'easy' | 'medium' | 'hard'>>({});
   const [notes, setNotes] = useState<Note[]>([]);
@@ -57,23 +54,23 @@ function App() {
   const [bookmarksByDate, setBookmarksByDate] = useState<Record<string, Bookmark>>({});
   const { user, signOut } = useAuthenticator();
 
-  
   useEffect(() => {
     if (user && ratings.length > 0 && problem) {
       fetchRating();
       fetchNote();
     }
-  }, [user, ratings, problem , notes]);
+  }, [user, ratings, problem, notes]);
 
   useEffect(() => {
     if (user) {
-      fetchDailyProblem()
+      listProblemDates()
+        .then(() => fetchDailyProblem())
         .then(() => listBookmarks())
-        .then(() => listRatings()) 
+        .then(() => listRatings())
         .then(() => listNotes())
     }
-   }, [user]);
-  
+  }, [user]);
+
   useEffect(() => {
     if (selectedDate) {
       fetchDailyProblem();
@@ -86,7 +83,17 @@ function App() {
       fetchRating();
     }
   }, [problem]);
-  
+
+  async function listProblemDates() {
+    try {
+      const { data } = await client.models.Problem.list();
+      const dates = new Set(data.map(p => p.publishDate).filter((date): date is string => date !== null));
+      setProblemDates(dates);
+    } catch (error) {
+      console.error('Error listing problem dates:', error);
+    }
+  }
+
   async function fetchDailyProblem() {
     try {
       const dateStr = selectedDate.format('YYYY-MM-DD');
@@ -316,68 +323,70 @@ function App() {
     }
   }
 
-
-
   const bookmarkedDates = useMemo(() => {
     return new Set(bookmarks.map(b => b.date).filter((date): date is string => date !== undefined));
   }, [bookmarks]);
 
-
   return (
-    
-    <main className="container mx-auto p-4 max-w-9x3 min-w-[320px]">
-  
-  <div className="flex justify-between items-center mb-6">
-  <h1 className="text-3xl font-bold">Welcome, {user?.signInDetails?.loginId}</h1>
-  <div className="flex space-x-2">
-    <ExamButton />
-    <Button onClick={signOut} variant="outline">Sign Out</Button>
-  </div>
-</div>
-  
-  <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-14">
-    <h1 className="text-3xl font-bold">Daily Problems</h1>
-    <div className="flex flex-col md:flex-row items-center gap-4">
-      <span className="text-sm text-gray-600">Welcome!</span>
-      <Button onClick={signOut} variant="ghost" size="sm" className="ml-auto">
-        <LogOut className="w-4 h-4 mr-2" />
-        Sign Out
-      </Button>
-    </div>
-</div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-8 gap-8">
-        <div className="lg:col-span-3">
-          <Calendar 
-            currentMonth={currentMonth}
-            selectedDate={selectedDate} 
-            onSelectDate={(date, type) => {
-              if (type === 'month') {
-                setCurrentMonth(date);
-              } else {
-                setSelectedDate(date);
-              }
-            }} 
-            bookmarkedDates={bookmarkedDates}
-            ratings={ratingsByDate}
-          />
+    <main>
+      <header className="flex items-center justify-between p-4 ">
+        <img src="logo.png" alt="Logo" className="h-16 pl-6" />
+        <div><h1 className="text-3xl font-bold">Welcome, {user?.signInDetails?.loginId}</h1></div>
+        <div className="flex justify-between items-center mb-6">
+          
+          <div className="flex items-center justify-center gap-4 mx-4">
+            <ExamButton />
+            <Button className="bg-red-600 text-white hover:scale-110" onClick={signOut} variant="outline">Sign Out </Button>
+          </div>
         </div>
+        </header>
+      <Card className="p-12 rounded-3xl">
         
-        <div className="lg:col-span-5">
-          <Problem
-            problem={problem ? { ...problem, content: problem.content || "", hint: problem.hint || undefined } : null}
-            selectedDate={selectedDate}
-            isBookmarked={bookmarkedDates.has(selectedDate.format('YYYY-MM-DD'))}
-            currentRating={currentRating}
-            isBookmarkLoading={isBookmarkLoading}
-            onToggleBookmark={toggleBookmark}
-            onRateQuestion={rateQuestion}
-            currentNote={currentNote}
-            onSaveNote={saveNote}
-            isSaving={isSaving}
-          />
+
+        <div className="grid grid-cols-1 lg:grid-cols-8 gap-8">
+          <div className="lg:col-span-3">
+            <Calendar 
+              currentMonth={currentMonth}
+              selectedDate={selectedDate} 
+              onSelectDate={(date, type) => {
+                if (type === 'month') {
+                  setCurrentMonth(date);
+                } else {
+                  setSelectedDate(date);
+                }
+              }} 
+              bookmarkedDates={bookmarkedDates}
+              problemDates={problemDates}
+              ratings={ratingsByDate}
+            />
+          </div>
+          
+          <div className="lg:col-span-5">
+            <Problem
+              problem={problem ? {
+                ...problem,
+                content: problem.content || "",
+                hint: problem.hint || undefined,
+                wSolution: problem.wSolution || undefined,
+                vSolution: problem.vSolution || undefined
+              } : null}
+              selectedDate={selectedDate}
+              isBookmarked={bookmarkedDates.has(selectedDate.format('YYYY-MM-DD'))}
+              currentRating={currentRating}
+              isBookmarkLoading={isBookmarkLoading}
+              onToggleBookmark={toggleBookmark}
+              onRateQuestion={rateQuestion}
+              currentNote={currentNote}
+              onSaveNote={saveNote}
+              isSaving={isSaving}
+            />
+          </div>
         </div>
-      </div>
+      </Card>
+      <div className="p-6 flex justify-end">
+  <Button className="bg-blue-500 text-white hover:scale-110" onClick={() => window.location.href = 'mailto:support@learn4less.ca'} variant="outline">Support </Button>
+
+</div>
     </main>
   );
 }
@@ -388,4 +397,5 @@ export default function AuthenticatedApp() {
       <App />
     </Authenticator>
   );
+
 }
