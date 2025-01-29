@@ -8,43 +8,25 @@ specifies that any user authenticated via an API key can "create", "read",
 "update", and "delete" any "Todo" records.
 =========================================================================*/
 const schema = a.schema({
-
-  User: a
-  .model({
-    id: a.string().required(),
-    subscription: a.enum(['free', 'basic', 'premium']),
-    given_name: a.string(),
-    email: a.string(),
-    bookmarks: a.hasMany('Bookmark', 'userID'),
-    ratings: a.hasMany('Rating', 'userID'), 
-    notes: a.hasMany('Note', 'userID'),
-    chatSessions: a.hasMany('ChatSession', 'userID'),
-  })
-  .authorization(allow => [
-    allow.owner(),
-    allow.group('admin')
-  ]),
-
- Problem: a
-   .model({
-     content: a.string(),
-     publishDate: a.date(),
-     createdAt: a.datetime(),
-     updatedAt: a.datetime(),
-     topics: a.hasMany('ProblemTopic', 'problemID'),
-     note: a.hasOne('Note', 'problemID'),
-     bookmark: a.hasOne('Bookmark', 'problemID'),
-     rating: a.hasOne('Rating', 'problemID'),
-     hint: a.string(),
-     tags: a.string().array(),
-     wSolution: a.string(),
-     vSolution: a.string(),
-     chatSessions: a.hasMany('ChatSession', 'problemID'),
-   })
-   .authorization(allow => [
-     allow.authenticated().to(['read']),
-     allow.group('admin')
-   ]),
+  Problem: a
+    .model({
+      content: a.string(),
+      publishDate: a.date(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+      topics: a.hasMany('ProblemTopic', 'problemID'),
+      note: a.hasOne('Note', 'problemID'),
+      bookmark: a.hasOne('Bookmark', 'problemID'),
+      rating: a.hasOne('Rating', 'problemID'),
+      hint: a.string(),
+      tags: a.string().array(),
+      wSolution: a.string(),
+      vSolution: a.string()
+    })
+    .authorization(allow => [
+      allow.authenticated().to(['read']),
+      allow.group('admin')
+    ]),
 
   ProblemTopic: a
     .model({
@@ -71,19 +53,17 @@ const schema = a.schema({
       allow.group('admin')
     ]),
 
-    Note: a
+  Note: a
     .model({
       content: a.string(),
       problemID: a.id(),
       problem: a.belongsTo('Problem', 'problemID'),
-      userID: a.string(),
-      user: a.belongsTo('User', 'userID'),
+      owner: a.string(),
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })
     .authorization(allow => [
-      allow.owner(),
-      allow.group('admin')
+      allow.owner()
     ]),
 
   Course: a
@@ -97,59 +77,28 @@ const schema = a.schema({
       allow.group('admin')
     ]),
 
-    Bookmark: a
+  Bookmark: a
     .model({
-      userID: a.string(),
-      user: a.belongsTo('User', 'userID'),
+      owner: a.string(),
       problemID: a.id(),
       problem: a.belongsTo('Problem', 'problemID'),
     })
     .authorization(allow => [
-      allow.owner(),
-      allow.group('admin')
+      allow.owner()
     ]),
 
-    Rating: a
+  Rating: a
     .model({
       date: a.datetime(),
       rating: a.enum(['easy', 'medium', 'hard']),
-      userID: a.string(),
-      user: a.belongsTo('User', 'userID'),
+      owner: a.string(),
       problemID: a.id(),
       problem: a.belongsTo('Problem', 'problemID'),
     })
     .authorization(allow => [
-      allow.owner(),
-      allow.group('admin')
-    ]),
-    ChatSession: a
-    .model({
-      problemID: a.id(),
-      userID: a.string(),
-      user: a.belongsTo('User', 'userID'),
-      problem: a.belongsTo('Problem', 'problemID'),
-      messages: a.hasMany('ChatMessage', 'sessionID'),
-      createdAt: a.datetime(),
-      updatedAt: a.datetime(),
-    })
-    .authorization(allow => [
-      allow.owner(),
-      allow.group('admin').to(['read'])
-    ]),
- 
-  ChatMessage: a
-    .model({
-      content: a.string(),
-      role: a.enum(['user', 'assistant']),
-      sessionID: a.id(),
-      session: a.belongsTo('ChatSession', 'sessionID'),
-      createdAt: a.datetime(),
-    })
-    .authorization(allow => [
-      allow.owner(),
-      allow.group('admin').to(['read'])
-    ]),
- });
+      allow.owner()
+    ])
+});
 
 
 export type Schema = ClientSchema<typeof schema>;
