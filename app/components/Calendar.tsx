@@ -8,9 +8,10 @@ type CalendarProps = {
   currentMonth: moment.Moment;
   selectedDate: moment.Moment;
   onSelectDate: (date: moment.Moment, type: 'day' | 'month') => void;
-  bookmarkedDates: Set<string>;
+  bookmarkedDates: Set<string>;  // Changed from bookmarkedProblemIds
   problemDates: Set<string>;
   ratings: Record<string, 'easy' | 'medium' | 'hard'>;
+  isAdmin?: boolean;
 };
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -19,7 +20,8 @@ export const Calendar: React.FC<CalendarProps> = ({
   onSelectDate,
   bookmarkedDates,
   problemDates,
-  ratings
+  ratings,
+  isAdmin
 }) => {
   const startDay = currentMonth.clone().startOf('month').startOf('week');
   const endDay = currentMonth.clone().endOf('month').endOf('week');
@@ -54,14 +56,16 @@ export const Calendar: React.FC<CalendarProps> = ({
         'bg-emerald-100 dark:bg-emerald-900/30': rating === 'easy',
         'bg-amber-100 dark:bg-amber-900/30': rating === 'medium',
         'bg-rose-100 dark:bg-rose-900/30': rating === 'hard',
-        'opacity-50': !hasProblem,
-        'pointer-events-none opacity-20': isFutureDate,
-        'cursor-pointer': hasProblem && !isFutureDate,
-        'cursor-not-allowed': !hasProblem || isFutureDate,
+        'opacity-40': !hasProblem,
+        'pointer-events-none opacity-10': isFutureDate && !isAdmin, // Modified this line
+        'cursor-pointer': (hasProblem || (isAdmin && isFutureDate)) && (!isFutureDate || isAdmin), // Modified this line
+        'cursor-not-allowed': (!hasProblem && !isAdmin) || (isFutureDate && !isAdmin), // Modified this line
         'ring-2 ring-primary ring-offset-2': hasProblem && !rating
       },
-      hasProblem && !isFutureDate && "opacity-100 hover:opacity-90",
-      hasProblem && !isFutureDate && "hover:scale-105 hover:shadow-md",
+      (hasProblem || (isAdmin && isFutureDate)) && (!isFutureDate || isAdmin) && "opacity-100 hover:scale-110", // Modified this line
+      (hasProblem || (isAdmin && isFutureDate)) && (!isFutureDate || isAdmin) && "hover:scale-105 hover:shadow-md", // Modified this line
+      (!hasProblem ) && "opacity-40", // Modified this line
+      (isFutureDate && !isAdmin) && "opacity-10", // Modified this line
       isSelected && "outline outline-2 outline-primary dark:outline-primary"
     );
   };

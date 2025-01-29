@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import _ from 'lodash';
 import dynamic from 'next/dynamic';
- 
+import { Brain} from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -71,7 +71,7 @@ export default function ExamGenerator() {
   return (
     <Dialog >
       <DialogTrigger asChild>
-        <Button className="bg-green-400 hover:scale-110" variant="outline">Generate Custom Quiz</Button>
+        <Button className="bg-blue-700 text-white hover:bg-blue-800 flex px-3 py-3 rounded transition-transform hover:scale-110 gap-3"> <Brain size={20} />Custom Quiz</Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>

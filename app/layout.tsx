@@ -76,15 +76,11 @@ const formFields = {
       placeholder: 'Enter your Password:',
     },
   },
-  forgotPassword: {
-    email: {
-      placeholder: 'Enter your email:',
-    },
-  },
+  
   confirmResetPassword: {
     confirmation_code: {
       placeholder: 'Enter your Confirmation Code:',
-      label: 'New Label',
+      label: 'Confirmation Code',
       isRequired: false,
     },
     confirm_password: {

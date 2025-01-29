@@ -3,11 +3,11 @@ body {
   background: linear-gradient(180deg, rgb(255, 252, 245), rgb(250, 175, 18));
   display: flex;
   justify-content: center; /* Centers content horizontally */
-  align-items: center;    /* Centers content vertically */
+  /*align-items: center;    /* Centers content vertically */
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   max-width: 100%;
   overflow-x: hidden;
-  height: 100vh; /* Ensures the body takes up the full viewport height */
+  /*height: 110vh; /* Ensures the body takes up the full viewport height */
   background-attachment: fixed;
 }
 

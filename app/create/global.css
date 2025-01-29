@@ -6,3 +6,12 @@ body {
     margin: 0 !important;
     height: auto !important;
    }
+
+   .react-datepicker__day--highlighted {
+    background-color: #90cdf4 !important; /* Light blue highlight */
+    color: white !important;
+  }
+  
+  .react-datepicker__day--highlighted:hover {
+    background-color: #63b3ed !important; /* Darker blue on hover */
+  }

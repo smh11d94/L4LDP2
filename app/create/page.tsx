@@ -18,6 +18,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from 'sonner';
 import { CustomQuill } from '../exam/LatexRenderer';
 import "./global.css";
+import {renderLatex} from "../components/latexRender";
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+
+
 Amplify.configure(outputs);
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
@@ -41,10 +46,25 @@ export default function CreateProblem() {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingProblem, setExistingProblem] = useState<any>(null);
-  
+  const [confirmChanges, setConfirmChanges] = useState(false);
   const { user } = useAuthenticator();
+  const [datesWithProblems, setDatesWithProblems] = useState<string[]>([]);
 
   useEffect(() => {
+
+    const fetchExistingProblemDates = async () => {
+      try {
+        const response = await client.models.Problem.list();
+        const dates = response.data.map(problem => problem.publishDate).filter(date => date !== null) as string[];
+        setDatesWithProblems(dates);
+      } catch (error) {
+        toast.error("Failed to load problem dates");
+      }
+    };
+  
+    fetchExistingProblemDates()
+
+
     const fetchCoursesAndTopics = async () => {
       try {
         const coursesResponse = await client.models.Course.list();
@@ -67,133 +87,143 @@ export default function CreateProblem() {
     fetchCoursesAndTopics();
   }, []);
 
-  const handleDateChange = async (date: string) => {
-    setPublishDate(date);
-    try {
-      const response = await client.models.Problem.list({
-        filter: { publishDate: { eq: date } }
+const handleDateChange = async (date: string) => {
+  setPublishDate(date);
+  // Reset course selection immediately when date changes
+  setSelectedCourse('');
+  
+  try {
+    const response = await client.models.Problem.list({
+      filter: { publishDate: { eq: date } }
+    });
+    
+    if (response.data.length > 0) {
+      const problem = response.data[0];
+      setExistingProblem(problem);
+      setContent(problem.content || '');
+      setHint(problem.hint || '');
+      setTags(problem.tags?.join(', ') || '');
+      setWSolution(problem.wSolution || '');
+      setVSolution(problem.vSolution || '');
+      
+      // Fetch problem topics
+      const problemTopics = await client.models.ProblemTopic.list({
+        filter: { problemID: { eq: problem.id } }
       });
       
-      if (response.data.length > 0) {
-        const problem = response.data[0];
-        setExistingProblem(problem);
-        setContent(problem.content || '');
-        setHint(problem.hint || '');
-        setTags(problem.tags?.join(', ') || '');
-        setWSolution(problem.wSolution || '');
-        setVSolution(problem.vSolution || '');
-        
-        const problemTopics = await client.models.ProblemTopic.list({
-          filter: { problemID: { eq: problem.id } }
-        });
-        setSelectedTopics(problemTopics.data.map(pt => pt.topicID));
-        
-        toast.info('Existing problem loaded for this date');
-      } else {
-        setExistingProblem(null);
-        setContent('');
-        setHint('');
-        setTags('');
-        setWSolution('');
-        setVSolution('');
-        setSelectedTopics([]);
-      }
-    } catch (error) {
-      toast.error('Failed to check for existing problem');
-    }
-  };
-
-  const filteredTopics = selectedCourse
-    ? availableTopics.filter(topic => topic.courseID === selectedCourse)
-    : availableTopics;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      toast.error('You must be logged in to create a problem');
-      return;
-    }
-
-    if (!content || !publishDate) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const problemData = {
-        content,
-        hint: hint || null,
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        wSolution: wSolution || null,
-        vSolution: vSolution || null,
-        updatedAt: new Date().toISOString(),
-      };
-
-      if (existingProblem) {
-        await client.models.Problem.update({
-          id: existingProblem.id,
-          ...problemData,
-        });
-
-        const currentTopics = await client.models.ProblemTopic.list({
-          filter: { problemID: { eq: existingProblem.id } }
-        });
-        
-        // Remove old topics
-        for (const topic of currentTopics.data) {
-          if (!selectedTopics.includes(topic.topicID)) {
-            await client.models.ProblemTopic.delete({ id: topic.id });
-          }
+      setSelectedTopics(problemTopics.data.map(pt => pt.topicID));
+      
+      // Only set course if there are topics
+      if (problemTopics.data.length > 0) {
+        const firstTopicId = problemTopics.data[0].topicID;
+        const topic = availableTopics.find(t => t.id === firstTopicId);
+        if (topic) {
+          setSelectedCourse(topic.courseID);
         }
-        
-        // Add new topics
-        const existingTopicIds = currentTopics.data.map(t => t.topicID);
-        for (const topicId of selectedTopics) {
-          if (!existingTopicIds.includes(topicId)) {
-            await client.models.ProblemTopic.create({
-              problemID: existingProblem.id,
-              topicID: topicId,
-            });
-          }
-        }
-
-        toast.success('Problem updated successfully');
-      } else {
-        const newProblem = await client.models.Problem.create({
-          ...problemData,
-          publishDate,
-          createdAt: new Date().toISOString(),
-        });
-
-        if (selectedTopics.length > 0 && newProblem?.data?.id) {
-          for (const topicId of selectedTopics) {
-            await client.models.ProblemTopic.create({
-              problemID: newProblem.data.id,
-              topicID: topicId,
-            });
-          }
-        }
-
-        toast.success('Problem created successfully');
       }
       
-      // Reset form
+      toast.info('Existing problem loaded for this date');
+    } else {
+      setExistingProblem(null);
       setContent('');
-      setPublishDate('');
       setHint('');
       setTags('');
       setWSolution('');
       setVSolution('');
       setSelectedTopics([]);
-      setSelectedCourse('');
-      setExistingProblem(null);
-    } catch (error) {
-      toast.error(existingProblem ? 'Failed to update problem' : 'Failed to create problem');
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } catch (error) {
+    toast.error('Failed to check for existing problem');
+  }
+};
+
+  const filteredTopics = selectedCourse
+    ? availableTopics.filter(topic => topic.courseID === selectedCourse)
+    : availableTopics;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user) {
+        toast.error('You must be logged in to create a problem');
+        return;
+      }
+      if (!content.trim()) {
+        toast.error('Problem Content is required');
+        return;
+      }
+    
+      if (!content || !publishDate) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+    
+      setIsSubmitting(true);
+      try {
+        const problemData = {
+          content,
+          hint: hint || null,
+          tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+          wSolution: wSolution || null,
+          vSolution: vSolution || null,
+          updatedAt: new Date().toISOString(),
+        };
+    
+        if (existingProblem) {
+          await client.models.Problem.update({
+            id: existingProblem.id,
+            ...problemData,
+          });
+    
+          const currentTopics = await client.models.ProblemTopic.list({
+            filter: { problemID: { eq: existingProblem.id } }
+          });
+          
+          // Remove old topics
+          for (const topic of currentTopics.data) {
+            if (!selectedTopics.includes(topic.topicID)) {
+              await client.models.ProblemTopic.delete({ id: topic.id });
+            }
+          }
+          
+          // Add new topics
+          const existingTopicIds = currentTopics.data.map(t => t.topicID);
+          for (const topicId of selectedTopics) {
+            if (!existingTopicIds.includes(topicId)) {
+              await client.models.ProblemTopic.create({
+                problemID: existingProblem.id,
+                topicID: topicId,
+              });
+            }
+          }
+    
+          toast.success('Problem updated successfully');
+        } else {
+          const newProblem = await client.models.Problem.create({
+            ...problemData,
+            publishDate,
+            createdAt: new Date().toISOString(),
+          });
+    
+          if (selectedTopics.length > 0 && newProblem?.data?.id) {
+            for (const topicId of selectedTopics) {
+              await client.models.ProblemTopic.create({
+                problemID: newProblem.data.id,
+                topicID: topicId,
+              });
+            }
+          }
+    
+          setExistingProblem(newProblem.data);
+          toast.success('Problem created successfully');
+        }
+        
+        // Remove the form reset logic to keep the current state
+      } catch (error) {
+        toast.error(existingProblem ? 'Failed to update problem' : 'Failed to create problem');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
 
   if (!user) {
     return (
@@ -219,16 +249,17 @@ export default function CreateProblem() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-7 gap-6">
-              <div className="space-y-2 ">
-                <Label htmlFor="publishDate">Publish Date</Label>
-                <Input
-                  type="date"
-                  id="publishDate"
-                  value={publishDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+  <Label htmlFor="publishDate">Publish Date</Label>
+  <DatePicker
+    selected={publishDate ? new Date(publishDate) : null}
+    onChange={(date) => handleDateChange(date ? date.toISOString().split('T')[0] : '')}
+    dateFormat="yyyy-MM-dd"
+    className="w-full p-2 border rounded-md"
+    highlightDates={datesWithProblems.map(date => new Date(date))}
+    customInput={<Input />}
+  />
+</div>
 
               <div className="space-y-2">
                 <Label htmlFor="course">Course</Label>
@@ -304,17 +335,19 @@ export default function CreateProblem() {
     </Button>
   </div>
 
-  {/* Preview Section */}
-  {showPreview && (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="text-lg">Preview</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <CustomQuill value={content} readOnly={true} />
-      </CardContent>
-    </Card>
-  )}
+{/* Preview Section */}
+{showPreview && (
+  <Card className="mt-4">
+    <CardHeader>
+      <CardTitle className="text-lg">Preview</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="latex-render">
+        {renderLatex(content)}
+      </div>
+    </CardContent>
+  </Card>
+)}
 </div>
 
             
@@ -364,14 +397,28 @@ export default function CreateProblem() {
     />
   </div>
 </div>
+<div className="flex items-center gap-14 justify-end">  
+<div className="flex items-center gap-3 bg-red-200   p-3 rounded">
+  <input
+    type="checkbox"
+    id="confirmChanges"
+    checked={confirmChanges}
+    onChange={(e) => setConfirmChanges(e.target.checked)}
+    className="h-4 w-4 rounded border-gray-300 "
+  />
+  <Label htmlFor="confirmChanges" className="text-base">
+    I confirm that I want to {existingProblem ? 'update' : 'create'} this problem
+  </Label>
+</div>
 
             <Button 
               type="submit" 
-              className="w-full"
-              disabled={isSubmitting}
+              className="w-2/5 bg-blue-200 rounded p-6"
+              disabled={isSubmitting || !confirmChanges || !content.trim()}
             >
               {isSubmitting ? 'Saving...' : (existingProblem ? 'Update Problem' : 'Create Problem')}
             </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

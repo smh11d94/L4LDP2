@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo } from "react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import moment from 'moment';
-import { LogOut } from 'lucide-react';
 import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
 import 'react-quill/dist/quill.bubble.css';
@@ -15,15 +14,14 @@ import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import { Calendar } from './components/Calendar';
 import { Problem } from './components/Problem';
-import { getCurrentUser } from 'aws-amplify/auth';
+import SupportContact from './components/SupportContact';
 import ExamGenerator from "@/app/components/ExamGenerator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 Amplify.configure(outputs);
-
-
-
-
+import { checkAdminGroups } from "./security/checkAdminGroups";
+import Chat from './components/Chat';
+import { Brain, MessageCircle, HelpCircle, LogOut , X} from 'lucide-react';
 
 const client = generateClient<Schema>();
 
@@ -53,6 +51,58 @@ function App() {
   const [isBookmarkLoading, setIsBookmarkLoading] = useState(false);
   const [bookmarksByDate, setBookmarksByDate] = useState<Record<string, Bookmark>>({});
   const { user, signOut } = useAuthenticator();
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const groups = await checkAdminGroups();
+      setIsAdmin(Array.isArray(groups) && groups.includes('admin'));
+    };
+    checkAdmin();
+  }, []);
+
+
+  function ChatButton({ problem }: { problem: Problem | null }) {
+    return (
+      <>
+      
+        <Button 
+          className="fixed bottom-4 left-6 bg-blue-700 text-white hover:bg-blue-800 flex items-center gap-3 px-3 py-3 rounded-full shadow-lg transition-transform hover:scale-110 z-40"
+          onClick={() => setIsChatOpen(true)}
+        >
+          <MessageCircle size={20}/>
+          Chat About this Problem 
+          
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-[0.12]"></span>
+          <span className="relative inline-flex size-3 rounded-full bg-white"></span>
+
+        </Button>
+  
+        {isChatOpen && (
+          <div className="fixed bottom-20 left-6 w-[600px] h-[600px] bg-blue-300 rounded-xl drop-shadow-xl flex flex-col z-50">
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold">Math Problem Assistant</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsChatOpen(false)}
+                className="hover:bg-gray-100"
+              >
+                <X size={20} />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <Chat 
+                problem={problem ? { id: problem.id, content: problem.content ?? "" } : null} 
+              />
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
 
   useEffect(() => {
     if (user && ratings.length > 0 && problem) {
@@ -122,12 +172,16 @@ function App() {
         filter: { owner: { eq: user?.username } }
       });
       setBookmarks(data);
-      const bookmarkMap = data.reduce((acc, bookmark) => {
-        if (bookmark.date) {
-          acc[bookmark.date] = bookmark;
+      
+      const bookmarkMap: Record<string, Bookmark> = {};
+      for (const bookmark of data) {
+        if (bookmark.problemID) {
+          const { data: problem } = await client.models.Problem.get({ id: bookmark.problemID });
         }
-        return acc;
-      }, {} as Record<string, Bookmark>);
+        if (problem?.publishDate) {
+          bookmarkMap[problem.publishDate] = bookmark;
+        }
+      }
       setBookmarksByDate(bookmarkMap);
     } catch (error) {
       console.error('Error listing bookmarks:', error);
@@ -217,8 +271,7 @@ function App() {
         await client.models.Bookmark.delete({
           id: existingBookmark.id
         });
-        
-        setBookmarks(prevBookmarks => prevBookmarks.filter(b => b.id !== existingBookmark.id));
+        setBookmarks(prev => prev.filter(b => b.id !== existingBookmark.id));
         setBookmarksByDate(prev => {
           const updated = { ...prev };
           delete updated[dateString];
@@ -226,13 +279,11 @@ function App() {
         });
       } else {
         const { data: newBookmark } = await client.models.Bookmark.create({
-          date: dateString,
           problemID: problem.id,
           owner: user.username
         });
-        
         if (newBookmark) {
-          setBookmarks(prevBookmarks => [...prevBookmarks, newBookmark]);
+          setBookmarks(prev => [...prev, newBookmark]);
           setBookmarksByDate(prev => ({
             ...prev,
             [dateString]: newBookmark
@@ -324,23 +375,31 @@ function App() {
   }
 
   const bookmarkedDates = useMemo(() => {
-    return new Set(bookmarks.map(b => b.date).filter((date): date is string => date !== undefined));
-  }, [bookmarks]);
+    return new Set(Object.keys(bookmarksByDate));
+  }, [bookmarksByDate]);
 
   return (
     <main>
-      <header className="flex items-center justify-between p-4 ">
+      <header className="flex items-center justify-between pt-2 my-2">
+        
         <img src="logo.png" alt="Logo" className="h-16 pl-6" />
         <div><h1 className="text-3xl font-bold">Welcome, {user?.signInDetails?.loginId}</h1></div>
-        <div className="flex justify-between items-center mb-6">
+        
           
-          <div className="flex items-center justify-center gap-4 mx-4">
+          <div className="flex items-center gap-4 mx-4">
             <ExamButton />
-            <Button className="bg-red-600 text-white hover:scale-110" onClick={signOut} variant="outline">Sign Out </Button>
+            <ChatButton problem={problem ? {
+                ...problem,
+                content: problem.content || "",
+              } : null} />
+            
+            <SupportContact />
+          <Button className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-3 px-3 py-3 rounded transition-transform hover:scale-110" onClick={signOut} ><LogOut size={20}/>Sign Out </Button>
+          
           </div>
-        </div>
+
         </header>
-      <Card className="p-12 rounded-3xl">
+      <Card className="p-12 rounded-3xl max-w-[1600px] mx-auto">
         
 
         <div className="grid grid-cols-1 lg:grid-cols-8 gap-8">
@@ -358,6 +417,7 @@ function App() {
               bookmarkedDates={bookmarkedDates}
               problemDates={problemDates}
               ratings={ratingsByDate}
+              isAdmin={isAdmin}
             />
           </div>
           
@@ -384,7 +444,7 @@ function App() {
         </div>
       </Card>
       <div className="p-6 flex justify-end">
-  <Button className="bg-blue-500 text-white hover:scale-110" onClick={() => window.location.href = 'mailto:support@learn4less.ca'} variant="outline">Support </Button>
+  
 
 </div>
     </main>
