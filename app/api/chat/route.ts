@@ -1,10 +1,7 @@
 import OpenAI from 'openai';
-import { secret } from '@aws-amplify/backend'
-
-const OPENAI_API_KEY = secret('OPENAI_API_KEY').toString();
 
 const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(req: Request) {

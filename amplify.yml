@@ -13,6 +13,8 @@ frontend:
         - nvm use 22.12.0 # Use the correct Node.js version
     build:
       commands:
+        - echo "SENDGRID_API_KEY=$SENDGRID_API_KEY" >> .env
+        - echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env
         - npm run build
   artifacts:
     baseDirectory: .next

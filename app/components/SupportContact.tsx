@@ -25,32 +25,42 @@ export default function SupportContact() {
  } = useForm<FormData>();
 
  const onSubmit = async (data: FormData) => {
-   setIsSending(true);
-   
-   try {
-     const response = await fetch('/api/send-email', {
-       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-       },
-       body: JSON.stringify({
-         ...data,
-         userEmail: user?.signInDetails?.loginId
-       })
-     });
+  setIsSending(true);
+  
+  try {
+    const response = await fetch('../api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...data,
+        userEmail: user?.signInDetails?.loginId
+      })
+    });
 
-     if (!response.ok) throw new Error('Failed to send');
-     
-     reset();
-     setIsOpen(false);
-     alert('Message sent successfully!');
-   } catch (error) {
-     console.error('Failed to send email:', error);
-     alert('Failed to send message. Please try again.');
-   } finally {
-     setIsSending(false);
-   }
- };
+    const result = await response.json();
+
+    if (!response.ok) {
+      // Log the full error object for debugging
+      console.log('Error details:', result);
+      
+      // Extract the error message
+      const errorMessage = result.details?.[0]?.message || result.error || 'Unknown error';
+      throw new Error(errorMessage);
+    }
+    
+    reset();
+    setIsOpen(false);
+    alert('Message sent successfully!');
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    alert(`Failed to send message: ${errorMessage}`);
+  } finally {
+    setIsSending(false);
+  }
+};
 
  return (
    <Dialog open={isOpen} onOpenChange={setIsOpen}>

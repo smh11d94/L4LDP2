@@ -43,7 +43,7 @@ export default function Chat({ problem }: ChatProps) {
     setIsLoading(true);
   
     try {
-        const response = await fetch('/api/chat', {
+        const response = await fetch('../api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -74,11 +74,11 @@ export default function Chat({ problem }: ChatProps) {
              message.role === 'user' ? 'bg-blue-500 text-white text-left' : 'bg-green-100'
            }`}>
              <div className="prose dark:prose-invert max-w-none">
-               {message.content.split('\n').map((line, i) => (
-                 <div key={i} className="mb-4">
-                   {renderLatex(line)}
-                 </div>
-               ))}
+             {message.content?.split('\n').map((line, i) => (
+  <div key={i} className="mb-4">
+    {renderLatex(line)}
+  </div>
+))}
              </div>
            </div>
          </div>
