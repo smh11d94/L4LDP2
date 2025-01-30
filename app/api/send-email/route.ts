@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import sgMail from '@sendgrid/mail';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+import { secret } from '@aws-amplify/backend'
+
+const SENDGRID_API_KEY = secret('SENDGRID_API_KEY').toString();
+
+sgMail.setApiKey(SENDGRID_API_KEY);
 
 export async function POST(req: Request) {
   try {

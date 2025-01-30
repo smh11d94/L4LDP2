@@ -23,6 +23,7 @@ import { checkAdminGroups } from "./security/checkAdminGroups";
 import Chat from './components/Chat';
 import { Brain, MessageCircle, HelpCircle, LogOut , X} from 'lucide-react';
 
+
 const client = generateClient<Schema>();
 
 type Problem = Schema["Problem"]["type"];
