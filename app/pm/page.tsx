@@ -22,13 +22,18 @@ export default function CalendarPage() {
   useEffect(() => {
     const fetchProblems = async () => {
       try {
-        // Fetch problems with their related topics and ratings
         const response = await client.models.Problem.list({
-          selectionSet: ['id', 'content', 'publishDate', 'hint', 'tags'],
-          includedFields: {
-            topics: ['id', 'topic'],
-            rating: ['rating']
-          }
+          selectionSet: [
+            'id', 
+            'content', 
+            'publishDate', 
+            'hint', 
+            'tags',
+            // Include nested relations
+            'topics.topic.id',
+            'topics.topic.name', // Assuming you want topic name from Topic model
+            'rating.rating'
+          ]
         });
         setProblems(response.data);
       } catch (error) {
