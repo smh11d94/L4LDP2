@@ -1,9 +1,9 @@
 "use client";
 
 import CourseManagement from '@/app/components/course-management';
-import { AdminWrapper
+import { AdminWrapper} from '../security/AdminWrapper';
+import Navigation from '../components/Navigator/Navigation';
 
- } from '../security/AdminWrapper';
 export default function CourseManagementPage() {
-  return <AdminWrapper><CourseManagement /></AdminWrapper>;
+  return <AdminWrapper><div><Navigation /></div><CourseManagement /></AdminWrapper>;
 }

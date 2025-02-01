@@ -82,7 +82,7 @@ function App() {
         </Button>
   
         {isChatOpen && (
-          <div className="fixed bottom-20 left-6 w-[600px] h-[600px] bg-blue-300 rounded-xl drop-shadow-xl flex flex-col z-50">
+          <div className="fixed bottom-20 left-6 w-[600px] h-4/5 bg-blue-300 rounded-xl drop-shadow-xl flex flex-col z-50">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-semibold">Math Problem Assistant</h3>
               <Button

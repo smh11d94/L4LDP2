@@ -1,18 +1,20 @@
 "use client";
+import { useState, useEffect } from 'react';
 import { Amplify } from "aws-amplify";
 import outputs from "@/amplify_outputs.json";
-Amplify.configure(outputs);
-
-
-import { useState, useEffect } from 'react';
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import { Card } from "@/components/ui/card";
-import ProblemCalendar from './ProblemCalendar';
 import { toast } from 'sonner';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { format, eachDayOfInterval, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 
+Amplify.configure(outputs);
 const client = generateClient<Schema>();
+
+// Import ProblemCalendar directly
+import ProblemCalendar from './ProblemCalendar';
 
 export default function CalendarPage() {
   const [problems, setProblems] = useState<Array<any>>([]);
@@ -29,9 +31,8 @@ export default function CalendarPage() {
             'publishDate', 
             'hint', 
             'tags',
-            // Include nested relations
             'topics.topic.id',
-            'topics.topic.name', // Assuming you want topic name from Topic model
+            'topics.topic.name',
             'rating.rating'
           ]
         });

@@ -57,6 +57,10 @@ export const Problem: React.FC<ProblemProps> = ({
   const [localNote, setLocalNote] = useState(currentNote);
 
   useEffect(() => {
+    setShowHint(false);
+  }, [problem?.id]);
+  
+  useEffect(() => {
     setLocalNote(currentNote);
   }, [currentNote, problem?.id]);
 

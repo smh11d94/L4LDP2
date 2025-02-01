@@ -12,9 +12,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <AdminWrapper> 
+    <AdminWrapper>
     <html lang="en">
-    
       <body>
       <div><Navigation /></div>
       {children}</body>

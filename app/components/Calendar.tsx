@@ -1,9 +1,11 @@
-import moment from 'moment';
+import moment from 'moment-timezone';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookmarkIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
  
+moment.tz.setDefault('America/Vancouver');
+
 type CalendarProps = {
   currentMonth: moment.Moment;
   selectedDate: moment.Moment;

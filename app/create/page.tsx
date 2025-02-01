@@ -21,7 +21,7 @@ import "./global.css";
 import {renderLatex} from "../components/latexRender";
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-
+import moment from 'moment-timezone';
 
 Amplify.configure(outputs);
 
@@ -51,29 +51,28 @@ export default function CreateProblem() {
   const [datesWithProblems, setDatesWithProblems] = useState<string[]>([]);
 
   useEffect(() => {
-
     const fetchExistingProblemDates = async () => {
       try {
         const response = await client.models.Problem.list();
-        const dates = response.data.map(problem => problem.publishDate).filter(date => date !== null) as string[];
+        const dates = response.data
+          .map(problem => problem.publishDate)
+          .filter(date => date !== null) as string[];
         setDatesWithProblems(dates);
       } catch (error) {
         toast.error("Failed to load problem dates");
       }
     };
-  
-    fetchExistingProblemDates()
-
-
+   
     const fetchCoursesAndTopics = async () => {
       try {
         const coursesResponse = await client.models.Course.list();
+        const topicsResponse = await client.models.Topic.list();
+        
         setAvailableCourses(coursesResponse.data.map(course => ({
           id: course.id,
           name: course.name || ''
         })));
         
-        const topicsResponse = await client.models.Topic.list();
         setAvailableTopics(topicsResponse.data.map(topic => ({
           id: topic.id,
           name: topic.name || '',
@@ -83,18 +82,24 @@ export default function CreateProblem() {
         toast.error("Failed to load courses and topics");
       }
     };
-    
+   
+    fetchExistingProblemDates();
     fetchCoursesAndTopics();
-  }, []);
+   }, []);
 
-const handleDateChange = async (date: string) => {
-  setPublishDate(date);
+  const handleDateChange = async (date: Date | null) => {
+    if (!date) {
+      setPublishDate('');
+    }
+    const utcDate = moment(date).format('YYYY-MM-DD');
+  setPublishDate(utcDate);
+  setConfirmChanges(false);
   // Reset course selection immediately when date changes
   setSelectedCourse('');
   
   try {
     const response = await client.models.Problem.list({
-      filter: { publishDate: { eq: date } }
+      filter: { publishDate: { eq: utcDate } }
     });
     
     if (response.data.length > 0) {
@@ -137,6 +142,18 @@ const handleDateChange = async (date: string) => {
   }
 };
 
+const fetchExistingProblemDates = async () => {
+  try {
+    const response = await client.models.Problem.list();
+    const dates = response.data
+      .map(problem => problem.publishDate)
+      .filter(date => date !== null) as string[];
+    setDatesWithProblems(dates);
+  } catch (error) {
+    toast.error("Failed to load problem dates");
+  }
+};
+
   const filteredTopics = selectedCourse
     ? availableTopics.filter(topic => topic.courseID === selectedCourse)
     : availableTopics;
@@ -147,16 +164,11 @@ const handleDateChange = async (date: string) => {
         toast.error('You must be logged in to create a problem');
         return;
       }
-      if (!content.trim()) {
-        toast.error('Problem Content is required');
-        return;
-      }
-    
-      if (!content || !publishDate) {
+      if (!content.trim() || !publishDate) {
         toast.error('Please fill in all required fields');
         return;
       }
-    
+     
       setIsSubmitting(true);
       try {
         const problemData = {
@@ -167,13 +179,13 @@ const handleDateChange = async (date: string) => {
           vSolution: vSolution || null,
           updatedAt: new Date().toISOString(),
         };
-    
+     
         if (existingProblem) {
           await client.models.Problem.update({
             id: existingProblem.id,
             ...problemData,
           });
-    
+     
           const currentTopics = await client.models.ProblemTopic.list({
             filter: { problemID: { eq: existingProblem.id } }
           });
@@ -195,7 +207,7 @@ const handleDateChange = async (date: string) => {
               });
             }
           }
-    
+     
           toast.success('Problem updated successfully');
         } else {
           const newProblem = await client.models.Problem.create({
@@ -203,7 +215,7 @@ const handleDateChange = async (date: string) => {
             publishDate,
             createdAt: new Date().toISOString(),
           });
-    
+     
           if (selectedTopics.length > 0 && newProblem?.data?.id) {
             for (const topicId of selectedTopics) {
               await client.models.ProblemTopic.create({
@@ -212,18 +224,18 @@ const handleDateChange = async (date: string) => {
               });
             }
           }
-    
+     
           setExistingProblem(newProblem.data);
           toast.success('Problem created successfully');
         }
         
-        // Remove the form reset logic to keep the current state
+        await fetchExistingProblemDates();
       } catch (error) {
         toast.error(existingProblem ? 'Failed to update problem' : 'Failed to create problem');
       } finally {
         setIsSubmitting(false);
       }
-    };
+     };
 
   if (!user) {
     return (
@@ -252,13 +264,13 @@ const handleDateChange = async (date: string) => {
             <div className="space-y-2">
   <Label htmlFor="publishDate">Publish Date</Label>
   <DatePicker
-    selected={publishDate ? new Date(publishDate) : null}
-    onChange={(date) => handleDateChange(date ? date.toISOString().split('T')[0] : '')}
-    dateFormat="yyyy-MM-dd"
-    className="w-full p-2 border rounded-md"
-    highlightDates={datesWithProblems.map(date => new Date(date))}
-    customInput={<Input />}
-  />
+  selected={publishDate ? new Date(publishDate + 'T00:00:00') : null}
+  onChange={(date) => handleDateChange(date)}
+  dateFormat="yyyy-MM-dd"
+  className="w-full p-2 border rounded-md"
+  highlightDates={datesWithProblems.map(date => new Date(date + 'T00:00:00'))}
+  customInput={<Input />}
+/>
 </div>
 
               <div className="space-y-2">
