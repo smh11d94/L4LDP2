@@ -10,6 +10,7 @@ import { View, Image, Button, Text, Heading } from "@aws-amplify/ui-react";
 import { useTheme } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import './globals.css'
+import GoogleAnalytics from './GoogleAnalytics'  // Add this import
 
 import { I18n } from 'aws-amplify/utils';
 
@@ -284,8 +285,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+
+
+        
       <title>Daily Problems</title>
       <link rel="icon" href="/favicon.ico?v=1" />
+      <GoogleAnalytics />
       </head>
       <body >
         <Authenticator formFields={formFields} components={components} >
