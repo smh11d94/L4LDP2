@@ -277,26 +277,42 @@ const components = {
 
 
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const LandingPage = ({ onGetStarted }: { onGetStarted: () => void }) => (
+  <View textAlign="center" padding="2rem">
+    <Image
+      alt="Learn4Less logo" 
+      src="./logo.png"
+      width="50%"
+      height="auto"
+    />
+    <Heading level={1}>Welcome to Daily Problem App</Heading>
+    <Text className="text-2xl">This is a FREE tool for students to have some extra practice problems for Integral Calculus</Text>
+    <Text className="pb-4 text-2xl text-red-500 font-bold">For a better experience, use your laptop/tablet</Text>
+    <Button className="bg-blue-600 text-white hover:scale-110 text-xl" onClick={onGetStarted}>Get Started</Button>
+  </View>
+);
+
+import { ReactNode, useState } from 'react';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  const [showAuth, setShowAuth] = useState(false);
+  
   return (
     <html lang="en">
       <head>
-
-
-        
-      <title>Daily Problems</title>
-      <link rel="icon" href="/favicon.ico?v=1" />
-      <GoogleAnalytics />
+        <title>Daily Problems</title>
+        <link rel="icon" href="/favicon.ico?v=1" />
+        <GoogleAnalytics />
       </head>
-      <body >
-        <Authenticator formFields={formFields} components={components} >
-          {children}
-        </Authenticator>
-        </body>
+      <body>
+        {!showAuth ? (
+          <LandingPage onGetStarted={() => setShowAuth(true)} />
+        ) : (
+          <Authenticator formFields={formFields} components={components}>
+            {children}
+          </Authenticator>
+        )}
+      </body>
     </html>
   );
 }

@@ -3,6 +3,12 @@
 import Script from 'next/script'
 
 export default function GoogleAnalytics() {
+  const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost');
+
+if (isLocalhost) {
+  return null;
+}
   return (
     <>
       <Script

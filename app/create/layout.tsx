@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <AdminWrapper> 
     <html lang="en">
-    
+    <head><title>Create</title></head>
       <body>
       <div><Navigation /></div>
       {children}</body>
