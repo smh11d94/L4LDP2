@@ -1,0 +1,11 @@
+body {
+  margin: 0;
+  display: flex; /* or use 'flex' if you want to keep using justify-content */
+  justify-content: center;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  width: 100%; /* explicitly set width to 100% */
+  max-width: 100%;
+  overflow-x: hidden;
+  background-attachment: fixed;
+  background: azure;
+}

@@ -45,6 +45,7 @@ const schema = a.schema({
       name: a.string(),
       description: a.string(),
       courseID: a.id(),
+      sortOrder: a.integer(),
       course: a.belongsTo('Course', 'courseID'),
       problems: a.hasMany('ProblemTopic', 'topicID'),
     })

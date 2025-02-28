@@ -73,6 +73,13 @@ export default function CalendarPage() {
         id: problemId,
         publishDate: newDate
       });
+      setProblems(currentProblems => 
+        currentProblems.map(problem => 
+          problem.id === problemId 
+            ? {...problem, publishDate: newDate} 
+            : problem
+        )
+      );
       toast.success("Problem rescheduled successfully");
     } catch (error) {
       toast.error("Failed to update problem date");
@@ -80,7 +87,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="container max-w-7xl mx-auto p-6">
+    <div className="container-fluid w-5/6 p-6 py-16 ">
       <ProblemCalendar 
         problems={problems} 
         onProblemMove={handleProblemReorder}

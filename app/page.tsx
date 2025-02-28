@@ -307,6 +307,7 @@ function App() {
         r.owner === user.username
       );
       const now = new Date().toISOString();
+      const dateStr = selectedDate.format('YYYY-MM-DD');
       
       if (existingRating) {
         const updatedRating = await client.models.Rating.update({
@@ -318,8 +319,14 @@ function App() {
         setRatings(prevRatings => 
           prevRatings.map(r => r.id === existingRating.id ? { ...r, ...updatedRating } : r)
         );
+        
+        // Immediately update the ratingsByDate state
+        setRatingsByDate(prev => ({
+          ...prev,
+          [dateStr]: rating
+        }));
+        
         setCurrentRating(rating);
-        await listRatings();
       } else {
         const { data: newRating } = await client.models.Rating.create({
           rating,
@@ -328,8 +335,14 @@ function App() {
           owner: user.username
         });
         setRatings(prevRatings => [...prevRatings, newRating as Rating]);
+        
+        // Immediately update the ratingsByDate state
+        setRatingsByDate(prev => ({
+          ...prev,
+          [dateStr]: rating
+        }));
+        
         setCurrentRating(rating);
-        await listRatings();
       }
     } catch (error) {
       console.error('Error saving rating:', error);
