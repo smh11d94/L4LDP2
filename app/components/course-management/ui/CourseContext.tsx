@@ -117,9 +117,7 @@ export const CourseProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchTopics = async () => {
     try {
-      const response = await client.models.Topic.list({
-        sort: { field: 'sortOrder', direction: 'asc' }
-      });
+      const response = await client.models.Topic.list();
       const problemTopics = await client.models.ProblemTopic.list();
       
       const topicsWithCounts = response.data.map((topic: any) => {
