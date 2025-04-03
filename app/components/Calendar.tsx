@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookmarkIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import React, { useCallback, useMemo } from 'react';
  
 moment.tz.setDefault('America/Vancouver');
 
@@ -16,7 +17,7 @@ type CalendarProps = {
   isAdmin?: boolean;
 };
 
-export const Calendar: React.FC<CalendarProps> = ({
+export const Calendar: React.FC<CalendarProps> = React.memo(({
   currentMonth,
   selectedDate,
   onSelectDate,
@@ -28,20 +29,23 @@ export const Calendar: React.FC<CalendarProps> = ({
   const startDay = currentMonth.clone().startOf('month').startOf('week');
   const endDay = currentMonth.clone().endOf('month').endOf('week');
   
-  const calendar = [];
-  const day = startDay.clone();
-  
-  while (day.isBefore(endDay, 'day')) {
-    calendar.push(
-      Array(7).fill(0).map(() => {
-        const clonedDate = day.clone();
-        day.add(1, 'day');
-        return clonedDate;
-      })
-    );
-  }
+  const calendar = useMemo(() => {
+    const result = [];
+    const day = startDay.clone();
+    
+    while (day.isBefore(endDay, 'day')) {
+      result.push(
+        Array(7).fill(0).map(() => {
+          const clonedDate = day.clone();
+          day.add(1, 'day');
+          return clonedDate;
+        })
+      );
+    }
+    return result;
+  }, [startDay, endDay]);
 
-  const getDayStyle = (date: moment.Moment, isSelected: boolean, isCurrentMonth: boolean) => {
+  const getDayStyle = useCallback((date: moment.Moment, isSelected: boolean, isCurrentMonth: boolean) => {
     const dateString = date.format('YYYY-MM-DD');
     const rating = ratings[dateString];
     const isToday = date.isSame(moment(), 'day');
@@ -70,9 +74,9 @@ export const Calendar: React.FC<CalendarProps> = ({
       (isFutureDate && !isAdmin) && "opacity-10", // Modified this line
       isSelected && "outline outline-2 outline-primary dark:outline-primary"
     );
-  };
+  }, [ratings, problemDates, isAdmin]);
 
-  const getRatingDot = (rating?: 'easy' | 'medium' | 'hard') => {
+  const getRatingDot = useCallback((rating?: 'easy' | 'medium' | 'hard') => {
     if (!rating) return null;
     
     const colors = {
@@ -87,7 +91,7 @@ export const Calendar: React.FC<CalendarProps> = ({
         colors[rating]
       )} />
     );
-  };
+  }, []);
   
   return (
     <Card className="calendar w-full max-w-3xl mx-auto bg-card rounded-3xl overflow-hidden">
@@ -160,4 +164,4 @@ export const Calendar: React.FC<CalendarProps> = ({
       </CardContent>
     </Card>
   );
-};
+});

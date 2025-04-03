@@ -10,6 +10,7 @@ import { useTheme } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import './globals.css'
 import GoogleAnalytics from './GoogleAnalytics'  // Add this import
+import { Toaster } from "@/components/ui/sonner";
 
 import { I18n } from 'aws-amplify/utils';
 import { ReactNode, useState, useEffect } from 'react';
@@ -347,6 +348,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {showAuth ? (
           <Authenticator formFields={formFields} components={components}>
             {children}
+            <Toaster position="top-right" />
           </Authenticator>
         ) : (
           <LandingPage onGetStarted={handleGetStarted} />

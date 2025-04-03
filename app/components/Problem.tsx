@@ -1,24 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookmarkIcon, FileTextIcon, VideoIcon } from 'lucide-react';
+import { BookmarkIcon, FileTextIcon, VideoIcon, FileEdit, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
 import 'katex/dist/katex.min.css';
+import React from 'react';
  
 import { renderLatex } from './latexRender';
 
-const CustomQuill: React.FC<{ value: string; readOnly?: boolean; preserveFormulas?: boolean }> = ({ value, readOnly = false, preserveFormulas = false }) => {
+// Create a class to prevent text selection
+const noSelectClass = "select-none";
+
+const CustomQuill: React.FC<{ value: string; readOnly?: boolean; preserveFormulas?: boolean; preventSelection?: boolean }> = React.memo(({ 
+  value, 
+  readOnly = false, 
+  preserveFormulas = false,
+  preventSelection = false
+}) => {
+  const className = `prose dark:prose-invert max-w-none ${preventSelection ? noSelectClass : ''}`;
+
   if (preserveFormulas) {
     return (
-      <div className="prose dark:prose-invert max-w-none">
+      <div className={className}>
         {renderLatex(value)}
       </div>
     );
   }
   
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className={className}>
       {value.split('\n').map((line, i) => (
         <div key={i} className="mb-4">
           {renderLatex(line)}
@@ -26,7 +37,7 @@ const CustomQuill: React.FC<{ value: string; readOnly?: boolean; preserveFormula
       ))}
     </div>
   );
-};
+});
 
 type ProblemProps = {
   problem: {
@@ -47,7 +58,7 @@ type ProblemProps = {
   isSaving: boolean;
 };
 
-export const Problem: React.FC<ProblemProps> = ({
+export const Problem: React.FC<ProblemProps> = React.memo(({
   problem,
   selectedDate,
   isBookmarked,
@@ -63,6 +74,7 @@ export const Problem: React.FC<ProblemProps> = ({
   const [localNote, setLocalNote] = useState(currentNote);
   const [isModified, setIsModified] = useState(false);
   const [selectedRating, setSelectedRating] = useState<'easy' | 'medium' | 'hard' | null>(null);
+  const [showNotes, setShowNotes] = useState(false);
 
   useEffect(() => {
     setShowHint(false);
@@ -70,6 +82,8 @@ export const Problem: React.FC<ProblemProps> = ({
   
   useEffect(() => {
     setLocalNote(currentNote);
+    // Show notes section automatically if there's saved content
+    setShowNotes(!!currentNote);
   }, [currentNote]);
 
   // Reset local state when problem changes
@@ -79,7 +93,7 @@ export const Problem: React.FC<ProblemProps> = ({
   }, [problem?.id]);
 
   // Function to get style for each difficulty button
-  const getButtonStyle = (difficulty: 'easy' | 'medium' | 'hard') => {
+  const getButtonStyle = useCallback((difficulty: 'easy' | 'medium' | 'hard') => {
     // Use the selected rating if it's set, otherwise use currentRating
     const activeRating = isModified ? selectedRating : currentRating;
     
@@ -111,55 +125,38 @@ export const Problem: React.FC<ProblemProps> = ({
     return activeRating === difficulty 
       ? { ...baseStyle, ...activeStyles[difficulty] } 
       : baseStyle;
-  };
+  }, [isModified, selectedRating, currentRating]);
 
   // Handle button click with local state update first
-  const handleRatingClick = (rating: 'easy' | 'medium' | 'hard') => {
+  const handleRatingClick = useCallback((rating: 'easy' | 'medium' | 'hard') => {
     // Update local state for immediate feedback
     setSelectedRating(rating);
     setIsModified(true);
     
     // Call parent function
     onRateQuestion(rating);
-  };
+  }, [onRateQuestion]);
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-lg rounded-3xl overflow-hidden">
-        <CardHeader>
+    <div className="space-y-6 w-full h-full">
+      <Card className="shadow-lg rounded-3xl overflow-hidden h-full min-h-[480px] flex flex-col">
+        <CardHeader className="pb-3 border-b border-gray-200 relative shadow-sm">
           <div className="flex justify-between items-center">
             <CardTitle>Problem for {selectedDate.format('MMMM D, YYYY')}</CardTitle>
-            {problem && (
-              <Button 
-                onClick={onToggleBookmark}
-                variant={isBookmarked ? "default" : "ghost"}
-                size="sm"
-                disabled={isBookmarkLoading}
-                className={isBookmarked ? 'text-yellow-500 hover:text-yellow-600' : ''}
-              >
-                <BookmarkIcon className="w-4 h-4 mr-2" />
-                {isBookmarkLoading ? 'Loading...' : (isBookmarked ? 'Bookmarked' : 'Bookmark')}
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {problem ? (
-            <>
-              <CustomQuill value={problem.content} readOnly={true} />
-              
-              <div className="mt-6 space-y-4">
-                {/* Buttons Container */}
-                <div className="flex justify-between items-center flex-wrap gap-4">
-                  {/* Difficulty Rating Buttons */}
-                  <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              {problem && (
+                <>
+                  {/* Difficulty Rating Buttons moved to header */}
+                  <div className="flex">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
                             onClick={() => handleRatingClick('easy')} 
                             variant="outline"
+                            size="sm"
                             style={getButtonStyle('easy')}
+                            className="rounded-l-full rounded-r-none px-3 border-r-0 h-9 min-w-[70px]"
                           >
                             Easy
                           </Button>
@@ -173,7 +170,9 @@ export const Problem: React.FC<ProblemProps> = ({
                           <Button 
                             onClick={() => handleRatingClick('medium')} 
                             variant="outline"
+                            size="sm"
                             style={getButtonStyle('medium')}
+                            className="rounded-none px-3 border-x-0 h-9 min-w-[70px]"
                           >
                             Medium
                           </Button>
@@ -187,7 +186,9 @@ export const Problem: React.FC<ProblemProps> = ({
                           <Button 
                             onClick={() => handleRatingClick('hard')} 
                             variant="outline"
+                            size="sm"
                             style={getButtonStyle('hard')}
+                            className="rounded-r-full rounded-l-none px-3 border-l-0 h-9 min-w-[70px]"
                           >
                             Hard
                           </Button>
@@ -198,9 +199,74 @@ export const Problem: React.FC<ProblemProps> = ({
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-  
-                  {/* Solution Buttons */}
-                  <div className="flex flex-wrap gap-2">
+                
+                  <Button 
+                    onClick={onToggleBookmark}
+                    variant={isBookmarked ? "default" : "ghost"}
+                    size="sm"
+                    disabled={isBookmarkLoading}
+                    className={`rounded-full px-4 ${isBookmarked ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50' : ''}`}
+                  >
+                    <BookmarkIcon className="w-4 h-4 mr-2" />
+                    {isBookmarkLoading ? 'Loading...' : (isBookmarked ? 'Bookmarked' : 'Bookmark')}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-b from-transparent to-gray-100"></div>
+        </CardHeader>
+        <CardContent className="flex-grow overflow-y-auto p-0 pt-5">
+          {problem ? (
+            <div className="flex flex-col h-full justify-between">
+              <div className="px-6 pb-6">
+                <CustomQuill value={problem.content} readOnly={true} preventSelection={true} />
+              </div>
+              
+              <div className="border-t border-gray-200 bg-gray-50/70 px-6 py-6 space-y-4">
+                {/* Top row with Hint/Notes and Solution Buttons */}
+                <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
+                  {/* Left side - Hint or Notes Button */}
+                  <div>
+                    {problem.hint ? (
+                      <Button
+                        onClick={() => setShowHint(!showHint)}
+                        variant="outline"
+                        className={`transition-colors rounded-full py-2 ${
+                          showHint 
+                            ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'
+                            : 'bg-amber-50/50 text-amber-500 border-amber-200 hover:bg-amber-100'
+                        }`}
+                      >
+                        <HelpCircle className="w-4 h-4 mr-2 text-amber-500" />
+                        {showHint ? 'Hide Hint' : 'Show Hint'}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => setShowNotes(!showNotes)}
+                        variant="outline"
+                        className={`justify-start transition-colors rounded-full py-2 ${
+                          showNotes 
+                            ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' 
+                            : currentNote 
+                              ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' 
+                              : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+                        }`}
+                      >
+                        <FileEdit className={`w-4 h-4 mr-2 ${
+                          showNotes 
+                            ? 'text-blue-500' 
+                            : currentNote 
+                              ? 'text-green-500' 
+                              : 'text-purple-500'
+                        }`} />
+                        {showNotes ? 'Hide Notes' : (currentNote ? 'View Your Notes' : 'Add Your Personal Notes')}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Solution Buttons - Always Right side */}
+                  <div className="flex flex-wrap gap-2 ml-auto">
                     {problem.wSolution && (
                       <TooltipProvider>
                         <Tooltip>
@@ -208,7 +274,7 @@ export const Problem: React.FC<ProblemProps> = ({
                             <Button 
                               onClick={() => window.open(problem.wSolution, '_blank')}
                               variant="outline"
-                              className="bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
+                              className="bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 rounded-full"
                             >
                               <FileTextIcon className="w-4 h-4 mr-2" />
                               Written Solution
@@ -228,7 +294,7 @@ export const Problem: React.FC<ProblemProps> = ({
                             <Button 
                               onClick={() => window.open(problem.vSolution, '_blank')}
                               variant="outline"
-                              className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
+                              className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 rounded-full"
                             >
                               <VideoIcon className="w-4 h-4 mr-2" />
                               Video Solution
@@ -242,58 +308,75 @@ export const Problem: React.FC<ProblemProps> = ({
                     )}
                   </div>
                 </div>
-  
-                {/* Hint Section */}
-                {problem.hint && (
-                  <div>
-                    <Button
-                      onClick={() => setShowHint(!showHint)}
-                      variant="outline"
-                      className="bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      {showHint ? 'Hide Hint' : 'Show Hint'}
-                    </Button>
-                    {showHint && (
-                      <div className="mt-4 p-4 bg-blue-50 dark:bg-gray-800 rounded-2xl">
-                        <CustomQuill value={problem.hint} readOnly={true} preserveFormulas={true} />
+                
+                {/* Hint Content Section */}
+                {showHint && problem.hint && (
+                  <div className="mb-4 p-4 border border-amber-200 rounded-lg bg-amber-50/50 shadow-sm">
+                    <CustomQuill value={problem.hint} readOnly={true} preventSelection={true} />
+                  </div>
+                )}
+
+                {/* Notes Section - Only if hint exists or no hint but notes are toggled */}
+                {(problem.hint || !problem.hint) && (
+                  <div className="space-y-4">
+                    {/* Notes Toggle Button - Only show if hint exists */}
+                    {problem.hint && (
+                      <Button
+                        onClick={() => setShowNotes(!showNotes)}
+                        variant="outline"
+                        className={`max-w-[250px] justify-start transition-colors rounded-full py-2 ${
+                          showNotes 
+                            ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' 
+                            : currentNote 
+                              ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' 
+                              : 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100'
+                        }`}
+                      >
+                        <FileEdit className={`w-4 h-4 mr-2 ${
+                          showNotes 
+                            ? 'text-blue-500' 
+                            : currentNote 
+                              ? 'text-green-500' 
+                              : 'text-purple-500'
+                        }`} />
+                        {showNotes ? 'Hide Notes' : (currentNote ? 'View Your Notes' : 'Add Your Personal Notes')}
+                      </Button>
+                    )}
+                    
+                    {/* Notes Section - Only show when toggled */}
+                    {showNotes && (
+                      <div className="mt-3 p-4 border border-blue-200 rounded-lg bg-blue-50/50 shadow-sm">
+                        <Textarea
+                          value={localNote}
+                          onChange={e => {
+                            setLocalNote(e.target.value);
+                            setIsModified(true);
+                          }}
+                          className="min-h-32 border-blue-200 focus-visible:ring-blue-400 rounded-md"
+                          placeholder="Add your notes here..."
+                        />
+                        {localNote !== currentNote && (
+                          <Button
+                            onClick={() => onSaveNote(localNote)}
+                            className="mt-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5"
+                            disabled={isSaving}
+                          >
+                            {isSaving ? 'Saving...' : 'Save Notes'}
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
                 )}
               </div>
-  
-              {/* Notes Card */}
-              <Card className="mt-6 shadow-lg rounded-3xl overflow-hidden border border-gray-200">
-                <CardHeader className="p-4 border-b border-gray-100">
-                  <CardTitle className="text-lg font-semibold text-gray-800">My Notes</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <Textarea
-                    value={localNote}
-                    onChange={(e) => setLocalNote(e.target.value)}
-                    placeholder="Add your notes here..."
-                    rows={5}
-                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                </CardContent>
-                <CardFooter className="p-4 flex justify-end bg-gray-50">
-                  <Button
-                    onClick={() => onSaveNote(localNote)}
-                    disabled={isSaving}
-                    className="bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {isSaving ? 'Saving...' : 'Save Note'}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </>
+            </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No problem available for this date.</p>
+            <div className="text-center py-12 text-muted-foreground">
+              No problem is available for this date.
             </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
-};
+});

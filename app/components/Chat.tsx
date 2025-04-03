@@ -66,7 +66,7 @@ export default function Chat({ problem }: ChatProps) {
   };
 
  return (
-    <Card className="w-full max-w-3xl mx-auto p-4 rounded h-full bg-blue-300">
+    <Card className="w-full max-w-3xl mx-auto p-4 rounded h-full bg-gradient-to-r from-blue-600 to-blue-800">
       <div className="h-[calc(100%-4rem)] overflow-y-auto mb-4 border rounded p-4 bg-white">
        {messages.map((message, index) => (
          <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : ''}`}>
@@ -98,7 +98,7 @@ export default function Chat({ problem }: ChatProps) {
    </Card>
  );
 }
-
 function setElementClass(arg0: string) {
     throw new Error('Function not implemented.');
 }
+

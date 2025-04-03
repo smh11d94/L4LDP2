@@ -115,39 +115,49 @@ function App() {
   function ChatButton({ problem }: { problem: Problem | null }) {
     return (
       <>
-      
         <Button 
-          className="fixed bottom-4 left-6 bg-blue-700 text-white hover:bg-blue-800 flex items-center gap-3 px-3 py-3 rounded-full shadow-lg transition-transform hover:scale-110 z-40"
+          className="fixed bottom-4 left-6 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:bg-blue-700 flex items-center gap-3 px-6 py-3 rounded-full shadow-lg transition-all hover:shadow-blue-400/20 hover:shadow-xl z-40"
           onClick={() => setIsChatOpen(true)}
         >
-          <MessageCircle size={20}/>
-          Chat About this Problem 
-          
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-[0.12]"></span>
-          <span className="relative inline-flex size-3 rounded-full bg-white"></span>
-
+          <div className="relative">
+            <MessageCircle size={20} className="relative z-10" />
+            <span className="absolute top-0 left-0 h-full w-full animate-ping rounded-full bg-white opacity-[0.12]"></span>
+          </div>
+          <span className="font-medium">Math Assistant</span>
         </Button>
-  
-        {isChatOpen && (
-          <div className="fixed bottom-20 left-6 w-[600px] h-4/5 bg-blue-300 rounded-xl drop-shadow-xl flex flex-col z-50">
-            <div className="p-4 border-b flex justify-between items-center">
+
+        {/* Chat box with animation */}
+        <div 
+          className={`fixed bottom-20 left-6 md:w-[600px] w-[calc(100%-3rem)] h-[80vh] max-h-[800px] bg-white dark:bg-gray-800 rounded-xl shadow-lg flex flex-col z-50 transition-all duration-300 ease-in-out transform overflow-hidden ${
+            isChatOpen 
+              ? 'opacity-100 translate-y-0' 
+              : 'opacity-0 translate-y-12 pointer-events-none'
+          }`}
+        >
+          <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Brain size={20} />
               <h3 className="font-semibold">Math Problem Assistant</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsChatOpen(false)}
-                className="hover:bg-gray-100"
-              >
-                <X size={20} />
-              </Button>
             </div>
-            <div className="flex-1 overflow-hidden">
-              <Chat 
-                problem={problem ? { id: problem.id, content: problem.content ?? "" } : null} 
-              />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsChatOpen(false)}
+              className="hover:bg-blue-700/50 text-white"
+            >
+              <X size={20} />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto custom-scrollbar rounded-b-xl">
+              {isChatOpen && (
+                <Chat 
+                  problem={problem ? { id: problem.id, content: problem.content ?? "" } : null} 
+                />
+              )}
             </div>
           </div>
-        )}
+        </div>
       </>
     );
   }
@@ -469,8 +479,6 @@ function App() {
         </div>
       </header>
       <Card className="p-12 rounded-3xl max-w-[1600px] mx-auto">
-        
-
         <div className="grid grid-cols-1 lg:grid-cols-8 gap-8">
           <div className="lg:col-span-3">
             <Calendar 
@@ -490,7 +498,7 @@ function App() {
             />
           </div>
           
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 h-full">
             <Problem
               problem={problem ? {
                 ...problem,
