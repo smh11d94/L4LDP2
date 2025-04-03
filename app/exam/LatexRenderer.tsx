@@ -4,9 +4,20 @@ import { renderLatex } from '../components/latexRender';
 interface CustomQuillProps {
   value: string;
   readOnly?: boolean;
+  preserveFormulas?: boolean;
 }
 
-export const CustomQuill = ({ value, readOnly = false }: CustomQuillProps) => {
+export const CustomQuill = ({ value, readOnly = false, preserveFormulas = false }: CustomQuillProps) => {
+  // If preserveFormulas is true, we'll process the entire content as a single block
+  if (preserveFormulas) {
+    return (
+      <div className="prose dark:prose-invert max-w-none">
+        {renderLatex(value)}
+      </div>
+    );
+  }
+  
+  // Otherwise, process line by line (original behavior)
   return (
     <div className="prose dark:prose-invert max-w-none">
       {value.split('\n').map((line, i) => (

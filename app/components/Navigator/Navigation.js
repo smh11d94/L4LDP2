@@ -12,6 +12,9 @@ function Navigation() {
         ☰
       </div>
       <nav className={`menu ${isOpen ? 'open' : ''}`}>
+        <div className="close-icon" onClick={() => setIsOpen(false)}>
+          ✕
+        </div>
         <Link href="/">Home</Link>
         <Link href="/create">Create</Link>
         <Link href="/cm">Course Management</Link>

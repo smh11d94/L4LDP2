@@ -22,6 +22,7 @@ Amplify.configure(outputs);
 import { checkAdminGroups } from "./security/checkAdminGroups";
 import Chat from './components/Chat';
 import { Brain, MessageCircle, HelpCircle, LogOut , X} from 'lucide-react';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 
 const client = generateClient<Schema>();
@@ -30,6 +31,35 @@ type Problem = Schema["Problem"]["type"];
 type Bookmark = Schema["Bookmark"]["type"];
 type Rating = Schema["Rating"]["type"];
 type Note = Schema["Note"]["type"];
+
+// Welcome component
+function Welcome({ user, isOpen, onClose }: { user: any; isOpen: boolean; onClose: () => void }) {
+  if (!isOpen) return null;
+  
+  return (
+    <AlertDialog open={isOpen}>
+      <AlertDialogContent className="max-w-md bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-2xl text-blue-800 font-bold text-center">
+            Welcome back!
+          </AlertDialogTitle>
+        </AlertDialogHeader>
+        <AlertDialogDescription className="text-center">
+          <p className="text-gray-700 mb-4">
+            Hello, <span className="font-semibold text-blue-700">{user?.signInDetails?.loginId}</span>! 
+            Let's practice with some new problems.
+          </p>
+          <Button 
+            onClick={onClose}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow-md hover:shadow-lg transition-all"
+          >
+            Let's get started
+          </Button>
+        </AlertDialogDescription>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 const ExamButton = () => (
   <Dialog>
@@ -54,6 +84,7 @@ function App() {
   const { user, signOut } = useAuthenticator();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
 
   useEffect(() => {
@@ -64,6 +95,22 @@ function App() {
     checkAdmin();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    
+    // Check if we've shown the welcome message today
+    const lastWelcome = localStorage.getItem('lastWelcome');
+    const today = new Date().toDateString();
+    
+    if (!lastWelcome || lastWelcome !== today) {
+      setShowWelcome(true);
+      localStorage.setItem('lastWelcome', today);
+    }
+  }, [user]);
+
+  const closeWelcome = () => {
+    setShowWelcome(false);
+  };
 
   function ChatButton({ problem }: { problem: Problem | null }) {
     return (
@@ -301,13 +348,20 @@ function App() {
   async function rateQuestion(rating: 'easy' | 'medium' | 'hard') {
     if (!problem || !user?.username) return;
     
+    // IMMEDIATELY update UI state before async operations
+    const dateStr = selectedDate.format('YYYY-MM-DD');
+    setCurrentRating(rating);
+    setRatingsByDate(prev => ({
+      ...prev,
+      [dateStr]: rating
+    }));
+    
     try {
       const existingRating = ratings.find(r => 
         r.problemID === problem.id && 
         r.owner === user.username
       );
       const now = new Date().toISOString();
-      const dateStr = selectedDate.format('YYYY-MM-DD');
       
       if (existingRating) {
         const updatedRating = await client.models.Rating.update({
@@ -319,14 +373,6 @@ function App() {
         setRatings(prevRatings => 
           prevRatings.map(r => r.id === existingRating.id ? { ...r, ...updatedRating } : r)
         );
-        
-        // Immediately update the ratingsByDate state
-        setRatingsByDate(prev => ({
-          ...prev,
-          [dateStr]: rating
-        }));
-        
-        setCurrentRating(rating);
       } else {
         const { data: newRating } = await client.models.Rating.create({
           rating,
@@ -335,17 +381,29 @@ function App() {
           owner: user.username
         });
         setRatings(prevRatings => [...prevRatings, newRating as Rating]);
-        
-        // Immediately update the ratingsByDate state
-        setRatingsByDate(prev => ({
-          ...prev,
-          [dateStr]: rating
-        }));
-        
-        setCurrentRating(rating);
       }
     } catch (error) {
       console.error('Error saving rating:', error);
+      // If there's an error, revert the UI state
+      const previousRating = ratings.find(r => 
+        r.problemID === problem.id && 
+        r.owner === user.username
+      )?.rating as 'easy' | 'medium' | 'hard' | null;
+      
+      setCurrentRating(previousRating);
+      if (previousRating) {
+        setRatingsByDate(prev => ({
+          ...prev,
+          [dateStr]: previousRating
+        }));
+      } else {
+        // Remove the entry if there was no previous rating
+        setRatingsByDate(prev => {
+          const newState = { ...prev };
+          delete newState[dateStr];
+          return newState;
+        });
+      }
     }
   }
   
@@ -394,25 +452,22 @@ function App() {
 
   return (
     <main>
+      <Welcome user={user} isOpen={showWelcome} onClose={closeWelcome} />
+      
       <header className="flex items-center justify-between pt-2 my-2">
-        
         <img src="logo.png" alt="Logo" className="h-16 pl-6" />
         <div><h1 className="text-3xl font-bold">Welcome, {user?.signInDetails?.loginId}</h1></div>
-        
+        <div className="flex items-center gap-4 mx-4">
+          <ExamButton />
+          <ChatButton problem={problem ? {
+              ...problem,
+              content: problem.content || "",
+            } : null} />
           
-          <div className="flex items-center gap-4 mx-4">
-            <ExamButton />
-            <ChatButton problem={problem ? {
-                ...problem,
-                content: problem.content || "",
-              } : null} />
-            
-            <SupportContact />
+          <SupportContact />
           <Button className="bg-red-600 text-white hover:bg-red-700 flex items-center gap-3 px-3 py-3 rounded transition-transform hover:scale-110" onClick={signOut} ><LogOut size={20}/>Sign Out </Button>
-          
-          </div>
-
-        </header>
+        </div>
+      </header>
       <Card className="p-12 rounded-3xl max-w-[1600px] mx-auto">
         
 

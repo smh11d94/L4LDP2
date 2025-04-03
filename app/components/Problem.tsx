@@ -1,4 +1,4 @@
-import { useState , useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookmarkIcon, FileTextIcon, VideoIcon } from 'lucide-react';
@@ -8,9 +8,15 @@ import 'katex/dist/katex.min.css';
  
 import { renderLatex } from './latexRender';
 
-
-
-const CustomQuill: React.FC<{ value: string; readOnly?: boolean }> = ({ value, readOnly = false }) => {
+const CustomQuill: React.FC<{ value: string; readOnly?: boolean; preserveFormulas?: boolean }> = ({ value, readOnly = false, preserveFormulas = false }) => {
+  if (preserveFormulas) {
+    return (
+      <div className="prose dark:prose-invert max-w-none">
+        {renderLatex(value)}
+      </div>
+    );
+  }
+  
   return (
     <div className="prose dark:prose-invert max-w-none">
       {value.split('\n').map((line, i) => (
@@ -55,6 +61,8 @@ export const Problem: React.FC<ProblemProps> = ({
 }) => {
   const [showHint, setShowHint] = useState(false);
   const [localNote, setLocalNote] = useState(currentNote);
+  const [isModified, setIsModified] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<'easy' | 'medium' | 'hard' | null>(null);
 
   useEffect(() => {
     setShowHint(false);
@@ -62,16 +70,59 @@ export const Problem: React.FC<ProblemProps> = ({
   
   useEffect(() => {
     setLocalNote(currentNote);
-  }, [currentNote, problem?.id]);
+  }, [currentNote]);
 
-  const getDifficultyColor = (rating: 'easy' | 'medium' | 'hard') => {
-    const colors = {
-      easy: 'bg-green-500/10 text-green-500 hover:bg-green-500/20',
-      medium: 'bg-orange-500/10 text-orange-500 hover:bg-orange-500/20',
-      hard: 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+  // Reset local state when problem changes
+  useEffect(() => {
+    setIsModified(false);
+    setSelectedRating(null);
+  }, [problem?.id]);
+
+  // Function to get style for each difficulty button
+  const getButtonStyle = (difficulty: 'easy' | 'medium' | 'hard') => {
+    // Use the selected rating if it's set, otherwise use currentRating
+    const activeRating = isModified ? selectedRating : currentRating;
+    
+    // Base style for all buttons
+    const baseStyle = { 
+      transition: 'all 0.2s ease'
     };
-    return currentRating === rating ? colors[rating] : '';
+    
+    // Styles for each difficulty when active
+    const activeStyles = {
+      easy: { 
+        backgroundColor: 'rgba(34, 197, 94, 0.1)', 
+        color: 'rgb(34, 197, 94)',
+        fontWeight: 'bold' as const
+      },
+      medium: { 
+        backgroundColor: 'rgba(249, 115, 22, 0.1)', 
+        color: 'rgb(249, 115, 22)',
+        fontWeight: 'bold' as const
+      },
+      hard: { 
+        backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+        color: 'rgb(239, 68, 68)',
+        fontWeight: 'bold' as const
+      }
+    };
+    
+    // Return combined styles
+    return activeRating === difficulty 
+      ? { ...baseStyle, ...activeStyles[difficulty] } 
+      : baseStyle;
   };
+
+  // Handle button click with local state update first
+  const handleRatingClick = (rating: 'easy' | 'medium' | 'hard') => {
+    // Update local state for immediate feedback
+    setSelectedRating(rating);
+    setIsModified(true);
+    
+    // Call parent function
+    onRateQuestion(rating);
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-lg rounded-3xl overflow-hidden">
@@ -106,38 +157,44 @@ export const Problem: React.FC<ProblemProps> = ({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
-                            onClick={() => onRateQuestion('easy')} 
+                            onClick={() => handleRatingClick('easy')} 
                             variant="outline"
-                            className={getDifficultyColor('easy')}
+                            style={getButtonStyle('easy')}
                           >
                             Easy
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Rate as Easy</TooltipContent>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-md px-3 py-1.5 rounded-md">
+                          Rate as Easy
+                        </TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
-                            onClick={() => onRateQuestion('medium')} 
+                            onClick={() => handleRatingClick('medium')} 
                             variant="outline"
-                            className={getDifficultyColor('medium')}
+                            style={getButtonStyle('medium')}
                           >
                             Medium
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Rate as Medium</TooltipContent>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-md px-3 py-1.5 rounded-md">
+                          Rate as Medium
+                        </TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
-                            onClick={() => onRateQuestion('hard')} 
+                            onClick={() => handleRatingClick('hard')} 
                             variant="outline"
-                            className={getDifficultyColor('hard')}
+                            style={getButtonStyle('hard')}
                           >
                             Hard
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Rate as Hard</TooltipContent>
+                        <TooltipContent className="bg-white border border-gray-200 shadow-md px-3 py-1.5 rounded-md">
+                          Rate as Hard
+                        </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -157,7 +214,9 @@ export const Problem: React.FC<ProblemProps> = ({
                               Written Solution
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>View Written Solution</TooltipContent>
+                          <TooltipContent className="bg-white border border-gray-200 shadow-md px-3 py-1.5 rounded-md">
+                            View Written Solution
+                          </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     )}
@@ -175,7 +234,9 @@ export const Problem: React.FC<ProblemProps> = ({
                               Video Solution
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Watch Video Solution</TooltipContent>
+                          <TooltipContent className="bg-white border border-gray-200 shadow-md px-3 py-1.5 rounded-md">
+                            Watch Video Solution
+                          </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     )}
@@ -194,7 +255,7 @@ export const Problem: React.FC<ProblemProps> = ({
                     </Button>
                     {showHint && (
                       <div className="mt-4 p-4 bg-blue-50 dark:bg-gray-800 rounded-2xl">
-                        <CustomQuill value={problem.hint} readOnly={true} />
+                        <CustomQuill value={problem.hint} readOnly={true} preserveFormulas={true} />
                       </div>
                     )}
                   </div>
@@ -235,5 +296,4 @@ export const Problem: React.FC<ProblemProps> = ({
       </Card>
     </div>
   );
-
 };

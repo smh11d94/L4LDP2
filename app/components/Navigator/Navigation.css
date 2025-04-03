@@ -7,6 +7,21 @@
   font-size: 24px;
 }
 
+.close-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  font-size: 20px;
+  color: #333;
+  transition: 0.2s;
+}
+
+.close-icon:hover {
+  color: #000;
+  transform: scale(1.1);
+}
+
 .menu {
   position: fixed;
   right: -250px;

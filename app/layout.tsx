@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useAuthenticator } from "@aws-amplify/ui-react";
@@ -13,6 +12,7 @@ import './globals.css'
 import GoogleAnalytics from './GoogleAnalytics'  // Add this import
 
 import { I18n } from 'aws-amplify/utils';
+import { ReactNode, useState, useEffect } from 'react';
 
 I18n.putVocabulariesForLanguage('en', {
   'Sign In': 'Login', // Tab header
@@ -277,25 +277,64 @@ const components = {
 
 
 
-const LandingPage = ({ onGetStarted }: { onGetStarted: () => void }) => (
-  <View textAlign="center" padding="2rem">
-    <Image
-      alt="Learn4Less logo" 
-      src="./logo.png"
-      width="50%"
-      height="auto"
-    />
-    <Heading level={1}>Welcome to Daily Problem App</Heading>
-    <Text className="text-2xl">This is a FREE tool for students to have some extra practice problems for Integral Calculus</Text>
-    <Text className="pb-4 text-2xl text-red-500 font-bold">For a better experience, use your laptop/tablet</Text>
-    <Button className="bg-blue-600 text-white hover:scale-110 text-xl" onClick={onGetStarted}>Get Started</Button>
-  </View>
-);
-
-import { ReactNode, useState } from 'react';
+const LandingPage = ({ onGetStarted }: { onGetStarted: () => void }) => {
+  return (
+    <View textAlign="center" padding="2rem">
+      <Image
+        alt="Learn4Less logo" 
+        src="./logo.png"
+        width="50%"
+        height="auto"
+      />
+      <Heading level={1}>Welcome to Daily Problem App</Heading>
+      <Text className="text-2xl">This is a FREE tool for students to have some extra practice problems for Integral Calculus</Text>
+      <Text className="pb-4 text-2xl text-red-500 font-bold">For a better experience, use your laptop/tablet</Text>
+      <Button className="bg-blue-600 text-white hover:scale-110 text-xl" onClick={onGetStarted}>Get Started</Button>
+    </View>
+  );
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   const [showAuth, setShowAuth] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // First useEffect to set isMounted to true after component mounts
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  // Second useEffect that depends on isMounted and runs localStorage checks
+  useEffect(() => {
+    // Skip if not mounted yet (not client-side)
+    if (!isMounted) return;
+    
+    // Check if we should skip the landing page based on localStorage
+    try {
+      const lastShown = localStorage.getItem('landingPageLastShown');
+      const today = new Date().toDateString();
+      
+      // Only auto-redirect if we've seen it today
+      if (lastShown === today && !showAuth) {
+        setShowAuth(true);
+      }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+    }
+  }, [isMounted, showAuth]);
+  
+  // Handle the "Get Started" button click
+  const handleGetStarted = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        // Save that user has seen the landing page today
+        localStorage.setItem('landingPageLastShown', new Date().toDateString());
+      } catch (error) {
+        console.error('Error saving to localStorage:', error);
+      }
+    }
+    
+    setShowAuth(true);
+  };
   
   return (
     <html lang="en">
@@ -305,12 +344,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <GoogleAnalytics />
       </head>
       <body>
-        {!showAuth ? (
-          <LandingPage onGetStarted={() => setShowAuth(true)} />
-        ) : (
+        {showAuth ? (
           <Authenticator formFields={formFields} components={components}>
             {children}
           </Authenticator>
+        ) : (
+          <LandingPage onGetStarted={handleGetStarted} />
         )}
       </body>
     </html>

@@ -15,3 +15,23 @@ body {
   .react-datepicker__day--highlighted:hover {
     background-color: #63b3ed !important; /* Darker blue on hover */
   }
+
+  /* Add styles to fix the ReactQuill editor container height */
+  .ql-container {
+    height: auto !important;
+    border-bottom-left-radius: 0.75rem !important; /* Matches rounded-xl */
+    border-bottom-right-radius: 0.75rem !important;
+  }
+
+  .ql-toolbar {
+    border-top-left-radius: 0.75rem !important;
+    border-top-right-radius: 0.75rem !important;
+  }
+
+  .ql-editor {
+    min-height: 250px;
+    max-height: 500px;
+    overflow-y: auto;
+    border-bottom-left-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
+  }
